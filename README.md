@@ -1,4 +1,4 @@
-## Installation
+#### Installation
 
 L'installation calssique de Mongoose est toujours diponible.
 
@@ -13,7 +13,7 @@ L'executable sera toujours placé produit ici : "build/bin/mongoose"
 Celui çi est un appel à edge_cut basique directement en C++. (Voir l'exemple présent dans "Doc/Mongoose_UserGuide.pdf")
 
 
-## Usage
+#### Usage
 
 Pour lancer un test depuis l'executable C++:
 
@@ -23,13 +23,15 @@ Les matrices de tests du projet sont dans le dossier Matrix
 
 
 
-#### Version C
-#### Installation
+## Version C
+## Installation
 
 Pour l'instant aucun Makefile n'est présent pour automatiser la compilation.
 
 L'ensemble des .o nécéssaire sont dans le dossier "objects". Recompiler avec g++ les fichiers .cpp de Mongoose si il une modification a été apporté.
-(Il est nécéssaire d'ajouter l'aoption -c à la compilation pour ne pas faire intervenir le linkage à cette étape)
+(Il est nécéssaire d'ajouter l'option -c à la compilation pour ne pas faire intervenir le linkage à cette étape)
+g++ -c Source/classe.cpp -o2 objects/classe.o
+
 
 Le fichier "mongooseApplication/connectorTest.c" se compile lui à l'aide du compilateur gcc. Le .o résultant est aussi stocké dans le dossier "objects".
 
@@ -38,7 +40,7 @@ Une fois l'ensemble des .o mis à jours. Lancer la commande suivante pour créer
 g++ objects/*.o -o connectorTest
 
 
-#### Usage
+## Usage
 
 L'executable prend la matrice sur son entrée stdin.
 
@@ -52,10 +54,12 @@ B : execute la recherche de partition modulaire sur la matrice d'entrée. Le ré
 
 #### TODO
 
-- Changer l'option de compilation des fichiers du dossier "objects" en -o2 ou -o3.
+- Changer l'option de compilation des fichiers du dossier "objects" et de l'executable final.
 
 - Ajouter des timers dans mongoose.cpp, conectorTest.c et Mongoose_EdgeCut_Connector.cpp
 
 - Modifier modules.c afin d'utiliser les permutations factorisantes dans l'algo de modular_partition. (sur ce sujet voir aussi : https://github.com/antonovvk/decmod/blob/master/dm.c implémentation C de la décomposition modulaire par permutation factorisante)
 
 - Créer un header à modules.c afin de ne pas importer directement le .c dans connectorTest.c
+
+

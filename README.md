@@ -1,13 +1,9 @@
 #### Installation
 
-L'installation calssique de Mongoose est toujours diponible.
+L'installation classique de Mongoose est toujours diponible.
 
 make         # Builds Mongoose (uses CMake) and runs the demo
-
-
-La commande suivante ne génère plus l'executable classique du projet Mongoose.
-
-sudo make install 
+sudo make install    # installs the mongoose library in /usr/local/lib
 
 L'executable sera toujours placé produit ici : "build/bin/mongoose"
 Celui çi est un appel à edge_cut basique directement en C++. (Voir l'exemple présent dans "Doc/Mongoose_UserGuide.pdf")
@@ -22,23 +18,16 @@ Pour lancer un test depuis l'executable C++:
 Les matrices de tests du projet sont dans le dossier Matrix
 
 
-
 ## Version C
 ## Installation
 
-Pour l'instant aucun Makefile n'est présent pour automatiser la compilation.
+Il y a un Makefile dans mongooseApplication.
 
-L'ensemble des .o nécéssaire sont dans le dossier "objects". Recompiler avec g++ les fichiers .cpp de Mongoose si il une modification a été apporté.
-(Il est nécéssaire d'ajouter l'option -c à la compilation pour ne pas faire intervenir le linkage à cette étape)
-g++ -c Source/classe.cpp -o2 objects/classe.o
+Il utilise la libmongoose, qui est dans build/lib ou bien dans /usr/local/lib (si on a fait sudo make install). Comme elle n'est pas dans un emplacement standard, pour lancer l'exécutable, il faudra dire :
 
+export LD_LIBRARY_PATH = [path où se trouve libmongoose.so]
 
-Le fichier "mongooseApplication/connectorTest.c" se compile lui à l'aide du compilateur gcc. Le .o résultant est aussi stocké dans le dossier "objects".
-
-Une fois l'ensemble des .o mis à jours. Lancer la commande suivante pour créer l'executable :
-
-g++ objects/*.o -o connectorTest
-
+Tous les fichiers sont désormais centralisés dans mongooseApplication/
 
 ## Usage
 

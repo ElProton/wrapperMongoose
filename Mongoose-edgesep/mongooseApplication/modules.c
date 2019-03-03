@@ -3,44 +3,7 @@
 #include <getopt.h>
 #include <err.h>
 
-#include "mini_spasm.h"
-
-// modules.c:(.text+0x12ed): undefined reference to `spasm_compress'
-
-
-struct modular_partition_t {
-	spasm *S, *M, *Q;
-};
-
-struct node_t;
-struct class_t;
-
-struct node_t {
-	struct node_t *prev, *next;
-	int vertex;
-	struct class_t *class;
-};
-
-struct class_t {
-	struct class_t *prev, *next;
-	struct node_t *nodes;
-	int size;
-	int marks;
-	int split;
-
-	int Lpos;
-	int Kpos;
-
-};
-
-struct module_ctx_t {
-	spasm *A;
-	struct node_t *nodes;
-	struct class_t **L;
-	struct class_t **K;
-	int L_sp, K_lo, K_hi;
-
-};
+#include "modules.h"
 
 struct class_t *class_new()
 {

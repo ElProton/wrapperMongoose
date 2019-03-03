@@ -4,12 +4,11 @@
 #include <err.h>
 
 
-#include "../Include/Mongoose_EdgeCut_Connector.h"
+#include "Mongoose_EdgeCut_Connector.h"
 #include "mini_spasm.h"
-#include "modules.c"
 
-
-
+// #include "modules.c" OU PAS
+#include "modules.h"
 
 int main(int argc, char **argv)
 {
@@ -63,9 +62,9 @@ int main(int argc, char **argv)
 	g->n = A->n;
 	g->m = A->m;
 	g->nz = A->p[A->n];
-	g->p = (int64_t*) A->p;
-	g->i = (int64_t*) A->j;
-    	g->x = (double*) A->x;
+	g->p = (int64_t*) A->p;    /* problème de type */
+	g->i = (int64_t*) A->j;    /* problème de type */
+    	g->x = (double*) A->x;     /* problème de type */
 	g->w = NULL;
 
 	

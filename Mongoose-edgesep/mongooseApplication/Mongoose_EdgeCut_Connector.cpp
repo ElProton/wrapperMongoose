@@ -1,10 +1,11 @@
 #include <cstdlib>
+#include <cmath>
 
-#include "../Include/Mongoose_EdgeCut.hpp"
-#include "../Include/Mongoose_Graph.hpp"
-#include "../Include/Mongoose_EdgeCut_Connector.h"
-#include "../SuiteSparse_config/SuiteSparse_config.h"
-#include <math.h>
+#include "Mongoose_EdgeCut.hpp"
+#include "Mongoose_Graph.hpp"
+#include "Mongoose_EdgeCut_Connector.h"
+#include "SuiteSparse_config.h"
+
 
 #ifdef __cplusplus
 extern "C" {

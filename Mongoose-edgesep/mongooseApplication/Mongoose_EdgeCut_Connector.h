@@ -48,6 +48,6 @@ typedef struct {
     double *w;
 } GraphC;
 
-EdgeCutC* connector_edge_cut(const GraphC *g);
+EdgeCutC* connector_edge_cut(const GraphC* g);
 
 #endif

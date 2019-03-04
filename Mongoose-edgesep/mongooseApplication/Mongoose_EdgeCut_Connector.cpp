@@ -7,6 +7,7 @@
 #include "SuiteSparse_config.h"
 
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,7 +15,8 @@ extern "C" {
 EdgeCutC* connector_edge_cut(const GraphC *g){
     Mongoose::EdgeCut* ec;
 
-    EdgeCutC* res = (EdgeCutC*)SuiteSparse_malloc(1, sizeof(EdgeCutC));
+    EdgeCutC *res = (EdgeCutC*)SuiteSparse_malloc(1, sizeof(*res));
+
     Mongoose::Graph *g_obj = Mongoose::Graph::create(fmax(g->n,g->m),g->nz,g->p,g->i,g->x,g->w);
     
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <err.h>
+#include <time.h>
 
 
 #include "Mongoose_EdgeCut_Connector.h"
@@ -11,6 +12,7 @@
 
 int main(int argc, char **argv)
 {
+	int ch,msec;
 	struct option longopts[6] = {
 		{"A", no_argument, NULL, 'A'},
 		{"B", no_argument, NULL, 'B'},
@@ -33,7 +35,7 @@ int main(int argc, char **argv)
 		mode = 'A';
 	}
 
-
+	clock_t begin_time = clock();
 	spasm_triplet *T = spasm_load_mm(stdin, -1);
 	assert(T->n == T->m);
 	
@@ -50,10 +52,18 @@ int main(int argc, char **argv)
 	spasm *A = spasm_compress(T);
 	spasm_triplet_free(T);
 
+	clock_t loading_matrix_time = clock() - begin_time;
+	msec = loading_matrix_time * 1000 / CLOCKS_PER_SEC;
+	printf("Loading : %d s  %d ms \n",msec/1000,msec%1000);
+
+
 	if (mode=='B') {
 		struct modular_partition_t *partition = modular_partition(A);
 		A = partition -> M;
 	}
+	clock_t search_modules_time = clock() - loading_matrix_time;
+	msec = search_modules_time * 1000 / CLOCKS_PER_SEC;
+	printf("Search Modules : %d s  %d ms \n", msec/1000,msec%1000);
 
 	int n = A -> n;
 	int *Ap = A->p;
@@ -86,12 +96,24 @@ int main(int argc, char **argv)
     	g->x = NULL;
 	g->w = NULL;
 
-	connector_edge_cut(g);
+	clock_t wrapping_time = clock() - search_modules_time;
+	msec = wrapping_time * 1000 / CLOCKS_PER_SEC;
+	printf("Wrapping : %d s  %d ms \n", msec/1000,msec%1000);
+
+	EdgeCutC* ec = connector_edge_cut(g);
+
+	clock_t edge_cut_time = clock() - wrapping_time;
+	msec = edge_cut_time * 1000 / CLOCKS_PER_SEC;
+	printf("Edge Cut : %d s  %d ms \n", msec/1000,msec%1000);
 
 	free(g);
 	free(aj64);
 	free(ap64);
 	spasm_csr_free(A);
 
-	return 0;
+	printf("cut cost: %f \n",  ec->cut_cost);
+	printf("cut size: %li \n",  ec->cut_size);
+	printf("imbalance: %f \n",  ec->imbalance);
+
+	return EXIT_SUCCESS;
 }

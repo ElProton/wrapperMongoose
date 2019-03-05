@@ -43,12 +43,6 @@ B : execute la recherche de partition modulaire sur la matrice d'entrée. Le ré
 
 #### TODO
 
-- Changer l'option de compilation des fichiers du dossier "objects" et de l'executable final.
-
-- Ajouter des timers dans mongoose.cpp, conectorTest.c et Mongoose_EdgeCut_Connector.cpp
+- corriger le passage par l'option B.
 
 - Modifier modules.c afin d'utiliser les permutations factorisantes dans l'algo de modular_partition. (sur ce sujet voir aussi : https://github.com/antonovvk/decmod/blob/master/dm.c implémentation C de la décomposition modulaire par permutation factorisante)
-
-- Créer un header à modules.c afin de ne pas importer directement le .c dans connectorTest.c
-
-

@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	spasm_triplet *T = spasm_load_mm(stdin, -1);
 	assert(T->n == T->m);
 	
-	/* élimine les entrées sur la diagonale */
+	
 	int *Ti = T->i;
 	int *Tj = T->j;
 	for (int px = 0; px < T->nz; px++)
@@ -59,15 +59,22 @@ int main(int argc, char **argv)
 
 	if (mode=='B') {
 		struct modular_partition_t *partition = modular_partition(A);
-		A = partition -> M;
+		spasm *Q = partition->Q;
+
+
+		A = partition -> Q;
 	}
+
 	clock_t search_modules_time = clock() - loading_matrix_time;
 	msec = search_modules_time * 1000 / CLOCKS_PER_SEC;
 	printf("Search Modules : %d s  %d ms \n", msec/1000,msec%1000);
 
 	int n = A -> n;
+	int m = A -> m;
 	int *Ap = A->p;
 	int *Aj = A->j;
+	int *Ax = A->x;
+	int nzmax = A->nzmax;
 
 	int64_t *ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 	int64_t *aj64 = spasm_calloc(spasm_nnz(A), sizeof(int64_t));
@@ -78,12 +85,10 @@ int main(int argc, char **argv)
 	for (int i = 0; i < spasm_nnz(A); i++)
 		aj64[i] = Aj[i];
 	
-	/*n = A -> m;
-	double *axd = spasm_calloc(n, sizeof(double));
-	for(i = 0; i <= n; i++){
-		val = A->x[i];
-		vald = (double) val;
-		axd[i] = vald;
+	
+	/*double *axd = spasm_calloc(spasm_nnz(A), sizeof(double));
+	for(int i = 0; i < spasm_nnz(A); i++){
+		axd[i] = Ax[i];
 	}*/
 
 	GraphC *g =  spasm_malloc(sizeof(*g));
@@ -109,6 +114,7 @@ int main(int argc, char **argv)
 	free(g);
 	free(aj64);
 	free(ap64);
+	//free(axd);
 	spasm_csr_free(A);
 
 	printf("cut cost: %f \n",  ec->cut_cost);

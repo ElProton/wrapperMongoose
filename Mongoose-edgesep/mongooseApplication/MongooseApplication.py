@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/py
 # -*- coding: utf-8 -*-
 import os
 import csv
@@ -9,44 +9,34 @@ filenames = [os.path.join(root,filename) for root, directories, filenames in os.
 
 
 with open(sys.argv[1], 'w', newline='') as csvfile:
-    spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    # Each column of the csv file
-    header = ["Total Edge Separator Time", "Matching", "Coarsening", "Refinement", "FM", "QP", "IO", "Cut Size", "Cut Cost", "Imbalance"]
-    spamwriter.writerow(["matrixName"]+header)
+	spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|',quoting=csv.QUOTE_MINIMAL)
+	# Each column of the csv file
+	
+	header = ["Loading", "Search Modules", "Wrapping", "Edge Cut",  "cut size", "cut cost", "imbalance"]
+	
+	spamwriter.writerow(["matrixName"]+header)
+	
 
-    for testfile in filenames:
-        try:
+	for testfile in filenames:
+		try:
+			resdic = dict()
 
-            cmd = './../Mongoose/Mongoose-edgesep/build/bin/mongoose '+testfile
-            # Get back the result of Mongoose execution
-            mongres = os.popen(cmd).read()
+			cmd = 'cat '+testfile+' | ./connectorTest ' if sys.argv[2] != "B" else 'cat '+testfile+' | ./connectorTest --B'
+			# Get back the result of Mongoose execution
+			mongres = os.popen(cmd).readlines()
+			for line in mongres:
+				# Remove additional quote and split key:value
+				line = line.replace("'","")
+				key, value = line.split(":")
+				if value != "":
+					resdic[key.strip()] = value.strip()
 
-            # Delete first part of the output
-            laststar = mongres.rindex("*")
-            mongres = mongres[laststar+2:]
+			reslist = [testfile.replace("../Matrix/","")]
+			for col in header:
+				reslist += [resdic[col]]
 
-            # Split each line
-            tab = mongres.split("\n")
-            tab = tab[:len(tab)-1]
-            resdic = dict()
-
-            for line in tab:
-                # Remove additional quote and split key:value
-                line = line.replace("'","")
-                key, value = line.split(":")
-                if value != "":
-                    resdic[key.strip()] = value.strip()
-
-            reslist = [testfile.replace("../Matrix/","")]
-            for col in header:
-                reslist += [resdic[col]]
-            spamwriter.writerow(reslist)
-        except :
-            # If Mongoose didn't return a good result (cause by a non sparse matrix or other). We keep a trace of matrix name but we didn't stop the script
-            print(testfile + " fichier error")
-            pass
-
-
-
-
+			spamwriter.writerow(reslist)
+		except :
+			print(sys.exc_info()[0])
+			pass
 

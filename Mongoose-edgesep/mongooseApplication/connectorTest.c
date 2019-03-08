@@ -57,10 +57,41 @@ int main(int argc, char **argv)
 	printf("Loading : %d s  %d ms \n",msec/1000,msec%1000);
 
 
+	double *w,*x;
+	spasm *M = NULL;
 	if (mode=='B') {
 		struct modular_partition_t *partition = modular_partition(A);
 		spasm *Q = partition->Q;
 
+		M = partition -> M;
+		int m = Q->m;
+		int n = M->n;
+		int *Mp = M->p;
+		int *Qj = Q->j;
+		int *Qp = Q->p;
+		w = spasm_calloc(n+1, sizeof(double));
+		x = spasm_calloc(n+1, sizeof(double));
+		for (int i = 0; i < n; i++){
+			w[i] = Mp[i+1]-Mp[i];
+			printf("w%d : %f \n",i,w[i]);
+		}
+		int limit = 0;
+		for (int i = 0; i < n; i++){
+			int nbVoi = Qp[i+1]-Qp[i];
+			int sommet = Qp[i];
+			
+			//printf("%d \n",nbVoi);
+			int j = 0;
+			while(j < nbVoi){
+				
+				double neigh_weight = w[Qj[limit+j]];
+				double mod_weight = w[i];
+				x[i] = neigh_weight*mod_weight;
+				printf("origine: %d et arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
+				j++;
+			}
+		limit = limit + j;
+		}
 
 		A = partition -> Q;
 	}
@@ -71,9 +102,9 @@ int main(int argc, char **argv)
 
 	int n = A -> n;
 	int m = A -> m;
+	
 	int *Ap = A->p;
 	int *Aj = A->j;
-	int *Ax = A->x;
 	int nzmax = A->nzmax;
 
 	int64_t *ap64 = spasm_calloc(n + 1, sizeof(int64_t));
@@ -84,22 +115,30 @@ int main(int argc, char **argv)
 
 	for (int i = 0; i < spasm_nnz(A); i++)
 		aj64[i] = Aj[i];
-	
-	
-	/*double *axd = spasm_calloc(spasm_nnz(A), sizeof(double));
-	for(int i = 0; i < spasm_nnz(A); i++){
-		axd[i] = Ax[i];
-	}*/
 
 	GraphC *g =  spasm_malloc(sizeof(*g));
+
+	if(M!=NULL){
+			int Mn = M -> n;
+
+			g->w = w;
+			g->x = x;
+
+			/*for (int i = 0; i < n; i++)
+				printf("%f \n",x[i]);*/
+
+		}
+		else{
+			g->w = NULL;
+			g->x = NULL;
+			}
 		
 	g->n = n;
 	g->m = n;
 	g->nz = spasm_nnz(A);
 	g->p = ap64;
 	g->i = aj64;
-    	g->x = NULL;
-	g->w = NULL;
+    	
 
 	clock_t wrapping_time = clock() - search_modules_time;
 	msec = wrapping_time * 1000 / CLOCKS_PER_SEC;
@@ -114,7 +153,6 @@ int main(int argc, char **argv)
 	free(g);
 	free(aj64);
 	free(ap64);
-	//free(axd);
 	spasm_csr_free(A);
 
 	printf("cut cost: %f \n",  ec->cut_cost);

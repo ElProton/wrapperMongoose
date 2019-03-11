@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 	printf("Loading : %d s  %d ms \n",msec/1000,msec%1000);
 
 
+	int64_t *ap64;
 	double *w,*x;
 	spasm *M = NULL;
 	if (mode=='B') {
@@ -71,23 +72,25 @@ int main(int argc, char **argv)
 		int *Qp = Q->p;
 		w = spasm_calloc(n+1, sizeof(double));
 		x = spasm_calloc(n+1, sizeof(double));
+		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 		for (int i = 0; i < n; i++){
 			w[i] = Mp[i+1]-Mp[i];
-			printf("w%d : %f \n",i,w[i]);
+			//printf("w%d : %f \n",i,w[i]);
 		}
 		int limit = 0;
 		for (int i = 0; i < n; i++){
+			ap64[i] = Qp[i];
 			int nbVoi = Qp[i+1]-Qp[i];
 			int sommet = Qp[i];
 			
-			//printf("%d \n",nbVoi);
+			//printf("ap : %d \n",Qp[i]);
 			int j = 0;
 			while(j < nbVoi){
 				
 				double neigh_weight = w[Qj[limit+j]];
 				double mod_weight = w[i];
 				x[i] = neigh_weight*mod_weight;
-				printf("origine: %d et arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
+				//printf("origine: %d, arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
 				j++;
 			}
 		limit = limit + j;
@@ -107,31 +110,31 @@ int main(int argc, char **argv)
 	int *Aj = A->j;
 	int nzmax = A->nzmax;
 
-	int64_t *ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 	int64_t *aj64 = spasm_calloc(spasm_nnz(A), sizeof(int64_t));
 
-	for (int i = 0; i < n; i++)
-		ap64[i] = Ap[i];
 
-	for (int i = 0; i < spasm_nnz(A); i++)
+	for (int i = 0; i < spasm_nnz(A); i++){
+		//printf("aj : %d \n",Aj[i]);
 		aj64[i] = Aj[i];
+	}
 
 	GraphC *g =  spasm_malloc(sizeof(*g));
 
 	if(M!=NULL){
-			int Mn = M -> n;
+		g->w = w;
+		g->x = x;
 
-			g->w = w;
-			g->x = x;
-
-			/*for (int i = 0; i < n; i++)
-				printf("%f \n",x[i]);*/
-
+	}
+	else{
+		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
+		for (int i = 0; i < n; i++){
+			//printf("ap : %d \n",Aj[i]);
+			ap64[i] = Ap[i];
 		}
-		else{
-			g->w = NULL;
-			g->x = NULL;
-			}
+
+		g->w = NULL;
+		g->x = NULL;
+	}
 		
 	g->n = n;
 	g->m = n;

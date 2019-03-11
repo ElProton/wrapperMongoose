@@ -124,6 +124,9 @@ int main(int argc, char **argv)
 		g->w = w;
 		g->x = x;
 
+		free(w);
+		free(x);
+
 	}
 	else{
 		ap64 = spasm_calloc(n + 1, sizeof(int64_t));

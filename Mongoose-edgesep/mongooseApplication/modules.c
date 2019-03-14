@@ -55,6 +55,14 @@ void class_insert(struct class_t *C, struct class_t *X)
 	X->next->prev = X;
 }
 
+void class_insert_gauche(struct class_t *C, struct class_t *X)
+{
+	X->next = C;
+	X->prev = C->prev;
+	X->prev->next = X;
+	X->next->prev = X;
+}
+
 void class_remove(struct class_t *X)
 {
 	X->next->prev = X->prev;
@@ -72,6 +80,17 @@ void node_insert(struct node_t *x, struct class_t *C)
 	x->prev->next = x;
 }
 
+void node_insert_gauche(struct node_t *x, struct class_t *C)
+{
+	x->class = C;
+	C->size++;
+	struct node_t *head = C->nodes;
+	x->next = head;
+	x->prev = head->prev;
+	x->next->prev = x;
+	x->prev->next = x;
+}
+
 void node_remove(struct node_t *x)
 {
 	x->class->size--;
@@ -85,6 +104,14 @@ void transfer(struct class_t *X, struct class_t *Y, struct node_t *x)
 		return;
 	node_remove(x);
 	node_insert(x, Y);
+}
+
+void transfer_gauche(struct class_t *X, struct class_t *Y, struct node_t *x)
+{
+	if (x->class != X)
+		return;
+	node_remove(x);
+	node_insert_gauche(x, Y);
 }
 
 void refine(struct module_ctx_t *ctx, struct node_t *x)
@@ -109,11 +136,12 @@ void refine(struct module_ctx_t *ctx, struct node_t *x)
 		struct node_t *y = nodes + Aj[it];
 		struct class_t *Y = y->class;
 		if (Y != X && Y->marks > 0 && Y->marks < Y->size) {
-			// print_class(Y);
+			printf(" is properly split by %d\n", y->vertex);
 			// printf(" is properly split by %d\n", x->vertex);
 			struct class_t *Ya = class_new();
 			class_insert(Y, Ya);
 			Y->split = 1;
+			
 		}
 		Y->marks = 0;
 	}
@@ -123,20 +151,18 @@ void refine(struct module_ctx_t *ctx, struct node_t *x)
 		struct class_t *Y = y->class;
 		if (!Y->split)
 			continue;
+
 		struct class_t *Ya = Y->next;
+		printf("s : %d\n" , y->vertex);
 		transfer(Y, Ya, y);
 	}
 
 	for (int it = Nx_start; it < Nx_end; it++) {
+
 		struct node_t *y = nodes + Aj[it];
 		struct class_t *Y = y->class->prev;
 		if (Y->split) {
 			struct class_t *Ya = Y->next;
-			// printf("Processing update to classes Yb = ");
-			// print_class(Y);
-			// printf(" and Ya = ");
-			// print_class(Ya);
-			// printf("\n");
 			Y->split = 0;
 			struct class_t **L = ctx->L;
 			struct class_t **K = ctx->K;
@@ -186,6 +212,75 @@ void refine(struct module_ctx_t *ctx, struct node_t *x)
 
 }
 
+int fraction(spasm *A, int i, int j){
+	int n = A->n;
+	int *Ap = A->p;
+	int *Aj = A->j;
+	int i_ind = Ap[i];
+	int j_ind = Ap[j];
+	for(int ind = 0; ind < n; ind++){
+		int s = Ap[ind];
+		if(s < i_ind || s > j_ind){
+			int nb_voisin = Ap[ind+1] - s;
+			int edge_i = 0;
+			int edge_j = 0;
+			for(int p = 0; p < nb_voisin; p++){
+				if(Aj[s+p] == i){
+					edge_i++;
+				}
+				if(Aj[s+p] == j){
+					edge_j++;
+				}
+			}
+			if(edge_i != edge_j){
+				goto casseur;
+			}
+		}
+	}
+	return 0;
+
+casseur:
+	return 1;
+} 
+
+void clean_decomposition(spasm *M,spasm *A){
+	int n = M->n;
+	int *Mp = M->p;
+	int *Ap = A->p;
+	int *Mj = M->j;
+	int *res = spasm_calloc(n+1,sizeof(int));
+	int *potentiel = spasm_calloc(2,sizeof(int));
+	int b_p = 1;
+	int c = 0;
+	int first = 1;
+	for(int ind = n; ind > 0; ind--){
+		int i = Mp[ind];
+		int a_index = Mj[i-1];
+		potentiel[b_p--] = a_index;
+		if(b_p < 0){
+			if(fraction(A,potentiel[0],potentiel[1])){
+				if(first==1){
+					res[c++] = Mp[ind+1];
+					first = 0;
+				}
+				res[c++] = i;
+			}
+			potentiel[1] = potentiel[0];
+			b_p = 0;
+		}
+
+	}
+	free(potentiel);
+	res[c] = 0;
+	int *Mptest = calloc(c+1,sizeof(int));
+	for(int i = 0; i <= c; i++){
+		Mptest[c-i] = res[i];
+	}
+	M->p = Mptest;
+	M->n = c;
+	free(res);
+}
+
 struct modular_partition_t *modular_partition(spasm * A)
 {
 	struct class_t *class_head;
@@ -210,12 +305,29 @@ struct modular_partition_t *modular_partition(spasm * A)
 	int *queue = spasm_malloc(n * sizeof(int));
 	int *mark = spasm_calloc(n, sizeof(int));
 	int lo = 0, hi = 0;
-	for (int i = 0; i < n; i++) {
+	print_partition(class_head);
+
+
+	struct node_t *pivot = &nodes[0];
+	int u = pivot->vertex;
+	struct class_t *class_d = class_new();
+	class_insert(initial_class, class_d);
+	for (int it = Ap[u]; it < Ap[u + 1]; it++) {
+		int v = Aj[it];
+		struct node_t *s_d = &nodes[v];
+		transfer(initial_class, class_d, s_d);
+	}
+
+	struct class_t *class = class_new();
+	class_insert(initial_class, class);
+	transfer(initial_class, class, pivot);
+	for (int i = 0; i < n; i++) {		
+
 		if (mark[i])
 			continue;
 		int start = hi;
 		queue[hi++] = i;
-		mark[i] = 1;
+		mark[i] = 1;;
 		while (lo < hi) {
 			int u = queue[lo++];
 			for (int it = Ap[u]; it < Ap[u + 1]; it++) {
@@ -226,13 +338,6 @@ struct modular_partition_t *modular_partition(spasm * A)
 				mark[v] = 1;
 			}
 		}
-
-		if (hi - start <= 2)
-			continue;
-		struct node_t *x = &nodes[i];
-		struct class_t *class = class_new();
-		class_insert(initial_class, class);
-		transfer(initial_class, class, x);
 
 	}
 	free(queue);
@@ -262,23 +367,23 @@ struct modular_partition_t *modular_partition(spasm * A)
 	ctx.K[ctx.K_hi++] = Z;
 
 	while (ctx.L_sp > 0 || ctx.K_lo < ctx.K_hi) {
-		// print_partition(class_head);
+		print_partition(class_head);
 		if (ctx.L_sp == 0) {
 			struct class_t *X = ctx.K[ctx.K_lo++];
 			X->Kpos = -1;
 
-			//printf("Dequeuing from K : ");
-			//print_class(X);
-			//printf("\n");
+			printf("Dequeuing from K : ");
+			print_class(X);
+			printf("\n");
 			struct node_t *x = X->nodes->next;
 			refine(&ctx, x);
 		} else {
 			struct class_t *X = ctx.L[--ctx.L_sp];
 			X->Lpos = -1;
 
-			//printf("Popped from L : ");
-			//print_class(X);
-			//printf("\n");
+			printf("Popped from L : ");
+			print_class(X);
+			printf("\n");
 			for (struct node_t * x = X->nodes->next; x != X->nodes;
 			     x = x->next)
 				refine(&ctx, x);
@@ -287,6 +392,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	free(ctx.L);
 	free(ctx.K);
 
+	print_partition(class_head);
 	int m = 0;
 	int *module = spasm_malloc(sizeof(int) * n);
 	// debugging purposes
@@ -351,127 +457,23 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm_triplet_free(S);
 	R->Q = spasm_compress(Q);
 	spasm_triplet_free(Q);
-	R->M = spasm_compress(M);
+	spasm *Mtest = spasm_malloc(sizeof(Mtest));
+	Mtest = spasm_compress(M);
+	/*int *Mptest = Mtest -> p;
+	for(int i = 0; i <= Mtest->n; i++){
+		printf("Mp%d : %d\n",i,Mptest[i]);
+	}
+	clean_decomposition(Mtest,A);
+	Mptest = Mtest -> p;
+	for(int i = 0; i <= Mtest->n; i++){
+		printf("Mpclean%d : %d\n",i,Mptest[i]);
+	}*/
+	R->M = Mtest;
+
+	int w = Mtest -> n;
+	int *Mp = R -> M -> p;
+
 	spasm_triplet_free(M);
 	return R;
 
 }
-
-/**
-int main(int argc, char **argv)
-{
-	int ch;
-	struct option longopts[6] = {
-		{"tabulated", no_argument, NULL, 't'},
-		{"verbose", no_argument, NULL, 'v'},
-		{"M", no_argument, NULL, 'M'},
-		{"Q", no_argument, NULL, 'Q'},
-		{"S", no_argument, NULL, 'S'},
-		{NULL, 0, NULL, 0}
-	};
-
-	char mode = -1;
-	while ((ch = getopt_long(argc, argv, "", longopts, NULL)) != -1) {
-		switch (ch) {
-		case 't':
-		case 'v':
-		case 'M':
-		case 'Q':
-		case 'S':
-			if (mode != -1)
-				errx(1, "incompatible options");
-			mode = ch;
-			break;
-		default:
-			errx(1, "Unknown option");
-		}
-	}
-	if (mode == -1) {
-		warnx("Choosing verbose mode by default");
-		mode = 'v';
-	}
-
-	spasm_triplet *T = spasm_load_mm(stdin, -1);
-	assert(T->n == T->m);
-	int *Ti = T->i;
-	int *Tj = T->j;
-	for (int px = 0; px < T->nz; px++) {
-		if (Ti[px] == Tj[px]) {
-			spasm_swap(Ti, px, T->nz - 1);
-			spasm_swap(Tj, px, T->nz - 1);
-			T->nz--;
-		}
-	}
-
-	spasm *A = spasm_compress(T);
-	spasm_triplet_free(T);
-
-	struct modular_partition_t *partition = modular_partition(A);
-	switch (mode) {
-	case 'Q':
-		spasm_save_csr(stdout, partition->Q);
-		break;
-	case 'M':
-		spasm_save_csr(stdout, partition->M);
-		break;
-	case 'S':
-		spasm_save_csr(stdout, partition->S);
-		break;
-	case 'v':
-	case 't':
-		{
-			int trivial = 0;
-			int nontrivial = 0;
-			int nontrivial_size = 0;
-			int largest = 0;
-			int module_edges = spasm_nnz(partition->S);
-			int quotient_edges = spasm_nnz(partition->Q);
-			spasm *M = partition->M;
-			int m = M->n;
-			for (int i = 0; i < m; i++) {
-				int size = spasm_row_weight(M, i);
-				if (size == 1) {
-					trivial++;
-				} else {
-					nontrivial++;
-					nontrivial_size += size;
-				}
-				largest = spasm_max(largest, size);
-			}
-			// we have not lost vertices
-			assert(nontrivial_size + trivial == A->n);
-			// we have not lost edges
-			int edges = module_edges;
-			spasm *Q = partition->Q;
-			int *Qp = Q->p;
-			int *Qj = Q->j;
-			for (int i = 0; i < m; i++)
-				for (int it = Qp[i]; it < Qp[i + 1]; it++) {
-					int j = Qj[it];
-					edges +=
-					    spasm_row_weight(M,
-							     i) *
-					    spasm_row_weight(M, j);
-				}
-			assert(edges == spasm_nnz(A));
-
-			if (mode == 't')
-				printf("%d; %d; %d; %d; %d; %d; %d; %d\n", A->n,
-				       spasm_nnz(A), trivial, nontrivial,
-				       nontrivial_size, largest, module_edges,
-				       quotient_edges);
-			if (mode == 'v')
-				printf("NotImplemented\n");
-		};
-		break;
-	}
-
-	spasm_csr_free(A);
-
-	spasm_csr_free(partition->S);
-	spasm_csr_free(partition->M);
-	spasm_csr_free(partition->Q);
-	free(partition);
-
-	return 0;
-}*/

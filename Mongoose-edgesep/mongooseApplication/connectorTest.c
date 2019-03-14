@@ -73,27 +73,29 @@ int main(int argc, char **argv)
 		w = spasm_calloc(n+1, sizeof(double));
 		x = spasm_calloc(n+1, sizeof(double));
 		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
+		ap64[0] = 0;
 		for (int i = 0; i < n; i++){
 			w[i] = Mp[i+1]-Mp[i];
-			//printf("w%d : %f \n",i,w[i]);
+			printf("w%d : %f \n",i,w[i]);
 		}
 		int limit = 0;
 		for (int i = 0; i < n; i++){
-			ap64[i] = Qp[i];
+			
 			int nbVoi = Qp[i+1]-Qp[i];
 			int sommet = Qp[i];
 			
-			//printf("ap : %d \n",Qp[i]);
 			int j = 0;
 			while(j < nbVoi){
 				
 				double neigh_weight = w[Qj[limit+j]];
 				double mod_weight = w[i];
 				x[i] = neigh_weight*mod_weight;
-				//printf("origine: %d, arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
+				printf("origine: %d, arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
 				j++;
 			}
 		limit = limit + j;
+		ap64[i+1] = limit;
+		printf("ap : %ld \n",ap64[i]);
 		}
 
 		A = partition -> Q;
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
 
 
 	for (int i = 0; i < spasm_nnz(A); i++){
-		//printf("aj : %d \n",Aj[i]);
+		printf("aj : %d \n",Aj[i]);
 		aj64[i] = Aj[i];
 	}
 

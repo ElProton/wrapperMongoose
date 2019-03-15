@@ -65,20 +65,27 @@ int main(int argc, char **argv)
 		spasm *Q = partition->Q;
 
 		M = partition -> M;
-		int m = Q->m;
+		int m = Q->n;
 		int n = M->n;
 		int *Mp = M->p;
+		int *Mj = M->j;
 		int *Qj = Q->j;
 		int *Qp = Q->p;
+		int n_edges = spasm_nnz(Q);
+		//printf("n-e : %d",n_edges);
 		w = spasm_calloc(n+1, sizeof(double));
-		x = spasm_calloc(n+1, sizeof(double));
+		x = spasm_calloc(n_edges+1, sizeof(double));
 		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 		ap64[0] = 0;
 		for (int i = 0; i < n; i++){
 			w[i] = Mp[i+1]-Mp[i];
-			printf("w%d : %f \n",i,w[i]);
+			/*printf("w%d : %f  [",i,w[i]);
+			for (int k=Mp[i]; k < Mp[i+1]; k++)
+				printf("%d ", Mj[k]);
+			printf("]\n");*/
 		}
 		int limit = 0;
+		int a = 0;
 		for (int i = 0; i < n; i++){
 			
 			int nbVoi = Qp[i+1]-Qp[i];
@@ -89,16 +96,24 @@ int main(int argc, char **argv)
 				
 				double neigh_weight = w[Qj[limit+j]];
 				double mod_weight = w[i];
-				x[i] = neigh_weight*mod_weight;
-				printf("origine: %d, arrivée : %d et poids : %f \n",i, Qj[limit+j],x[i]);
+				x[a] = neigh_weight*mod_weight;
+				//printf("origine: %d, arrivée : %d et poids : %f indice: %d \n",i, Qj[limit+j],x[a],limit);
 				j++;
-			}
+				a++;
+		}
 		limit = limit + j;
 		ap64[i+1] = limit;
-		printf("ap : %ld \n",ap64[i]);
+		//printf("ap : %ld \n",ap64[i]);
 		}
 
 		A = partition -> Q;
+
+		for(int i=0;i<n_edges;i++){
+			printf("x%d : %f\n",i,x[i]);
+		}
+		for(int i=0;i<n;i++){
+			printf("w%d : %f\n",i,w[i]);
+		}
 	}
 
 	clock_t search_modules_time = clock() - loading_matrix_time;
@@ -116,7 +131,7 @@ int main(int argc, char **argv)
 
 
 	for (int i = 0; i < spasm_nnz(A); i++){
-		printf("aj : %d \n",Aj[i]);
+		//printf("aj : %d \n",Aj[i]);
 		aj64[i] = Aj[i];
 	}
 
@@ -126,11 +141,9 @@ int main(int argc, char **argv)
 		g->w = w;
 		g->x = x;
 
-		free(w);
-		free(x);
-
 	}
 	else{
+		
 		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 		for (int i = 0; i < n; i++){
 			//printf("ap : %d \n",Aj[i]);
@@ -162,6 +175,14 @@ int main(int argc, char **argv)
 	free(aj64);
 	free(ap64);
 	spasm_csr_free(A);
+
+	bool *cut = ec->partition;
+	int sum = 0;
+	for(int i=0;i<ec->n;i++){
+		printf("cut : %d\n",cut[i]);
+		//sum = sum + ((1-cut[i])*w[i]);
+	}
+	printf("sum : %d\n",sum);
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);

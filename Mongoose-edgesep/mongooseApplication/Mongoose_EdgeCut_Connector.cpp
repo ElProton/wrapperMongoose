@@ -18,7 +18,10 @@ EdgeCutC* connector_edge_cut(const GraphC *g){
     EdgeCutC *res = (EdgeCutC*)SuiteSparse_malloc(1, sizeof(*res));
 
     Mongoose::Graph *g_obj = Mongoose::Graph::create(fmax(g->n,g->m),g->nz,g->p,g->i,g->x,g->w);
-    
+    Mongoose::EdgeCut_Options *options = Mongoose::EdgeCut_Options::create();
+
+    options->matching_strategy = (Mongoose::MatchingStrategy) HEMSRdeg;
+    options->initial_cut_type = (Mongoose::InitialEdgeCutType) InitialEdgeCut_QP;
 
 
     ec = edge_cut(g_obj);

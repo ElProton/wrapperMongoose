@@ -310,7 +310,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 	struct node_t *pivot = &nodes[0];
 	int u = pivot->vertex;
-	struct class_t *class_d = class_new();
+	/*struct class_t *class_d = class_new();
 	class_insert(initial_class, class_d);
 	for (int it = Ap[u]; it < Ap[u + 1]; it++) {
 		int v = Aj[it];
@@ -320,7 +320,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 	struct class_t *class = class_new();
 	class_insert(initial_class, class);
-	transfer(initial_class, class, pivot);
+	transfer(initial_class, class, pivot);*/
 	for (int i = 0; i < n; i++) {		
 
 		if (mark[i])
@@ -338,6 +338,12 @@ struct modular_partition_t *modular_partition(spasm * A)
 				mark[v] = 1;
 			}
 		}
+		if(hi-start<=2)
+			continue;
+		struct node_t *x = &nodes[i];
+		struct class_t *class = class_new();
+		class_insert(initial_class,class);
+		transfer(initial_class,class,x);
 
 	}
 	free(queue);
@@ -459,8 +465,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm_triplet_free(Q);
 	spasm *Mtest = spasm_malloc(sizeof(Mtest));
 	Mtest = spasm_compress(M);
-	/*int *Mptest = Mtest -> p;
-	for(int i = 0; i <= Mtest->n; i++){
+	int *Mptest = Mtest -> p;
+	/*for(int i = 0; i <= Mtest->n; i++){
 		printf("Mp%d : %d\n",i,Mptest[i]);
 	}
 	clean_decomposition(Mtest,A);

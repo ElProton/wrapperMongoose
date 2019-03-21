@@ -18,8 +18,9 @@
 #include "../Include/Mongoose_Random.hpp"
 #include "../Include/Mongoose_Refinement.hpp"
 #include "../Include/Mongoose_Waterdance.hpp"
+#include <iostream>
 
-#include <algorithm>
+using namespace std;
 
 namespace Mongoose
 {
@@ -59,8 +60,45 @@ EdgeCut *edge_cut(const Graph *graph, const EdgeCut_Options *options)
     if (!graph)
         return NULL;
 
+    /*cout << graph->n << endl;
+    cout << graph->nz << endl;
+
+    Int *p = graph->p;
+    cout << "P :";
+    for(int i = 0; i < graph->n;i++){
+        cout << p[i] << ", ";
+    }
+    cout << endl;
+
+    Int *mi = graph->i;
+    cout << "I :";
+    for(int i = 0; i < graph->nz;i++){
+        cout << mi[i] << ", ";
+    }
+    cout << endl;
+
+    double *x = graph->x;
+    if(x){
+	    cout << "X :";
+	    for(int i = 0; i < graph->nz;i++){
+		cout << x[i] << ", ";
+	    }
+	    cout << endl;
+    }
+
+    double *w = graph->w;
+    if(w){
+	    cout << "W :";
+	    for(int i = 0; i < graph->n;i++){
+		cout << w[i] << ", ";
+	    }
+	    cout << endl;
+    }*/
+
+
     // Create an EdgeCutProblem
     EdgeCutProblem *problem = EdgeCutProblem::create(graph);
+
 
     if (!problem)
         return NULL;

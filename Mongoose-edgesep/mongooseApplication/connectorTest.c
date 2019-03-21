@@ -108,12 +108,12 @@ int main(int argc, char **argv)
 
 		A = partition -> Q;
 
-		for(int i=0;i<n_edges;i++){
+		/*for(int i=0;i<n_edges;i++){
 			printf("x%d : %f\n",i,x[i]);
 		}
 		for(int i=0;i<n;i++){
 			printf("w%d : %f\n",i,w[i]);
-		}
+		}*/
 	}
 
 	clock_t search_modules_time = clock() - loading_matrix_time;
@@ -178,11 +178,11 @@ int main(int argc, char **argv)
 
 	bool *cut = ec->partition;
 	int sum = 0;
-	for(int i=0;i<ec->n;i++){
+	/*for(int i=0;i<ec->n;i++){
 		printf("cut : %d\n",cut[i]);
 		//sum = sum + ((1-cut[i])*w[i]);
-	}
-	printf("sum : %d\n",sum);
+	}*/
+	//printf("sum : %d\n",sum);
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);

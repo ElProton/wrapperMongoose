@@ -17,12 +17,12 @@ using namespace std;
 
 int main(int argn, const char **argv)
 {
-    #define NMAT 17
+    #define NMAT 16
     const std::string demo_files[NMAT] = {
-        "Erdos971.mtx",
+        "article.mtx",
+	"Pd.mtx",
         "G51.mtx",
         "GD97_b.mtx",
-        "Pd.mtx",
         "bcspwr01.mtx",
         "bcspwr02.mtx",
         "bcspwr03.mtx",
@@ -35,7 +35,7 @@ int main(int argn, const char **argv)
         "bcspwr10.mtx",
         "dwt_992.mtx",
         "jagmesh7.mtx",
-        "NotreDame_www.mtx"
+        //"NotreDame_www.mtx"
     };
 
     cout << "********************************************************************************" << endl;
@@ -67,6 +67,12 @@ int main(int argn, const char **argv)
         }
 
         EdgeCut *result = edge_cut(graph, options);
+
+	/*bool *cut = result -> partition;
+	cout << " Partition : ";
+	for(int j=0; j < result->n; j++){
+		cout << j << " : " << cut[j] << ", " << endl;
+	}*/
 
         cout << "Cut Cost:       " << setprecision(2) << result->cut_cost << endl;
         if (result->imbalance < 1e-12)

@@ -24,7 +24,7 @@ EdgeCutC* connector_edge_cut(const GraphC *g){
     options->initial_cut_type = (Mongoose::InitialEdgeCutType) InitialEdgeCut_QP;
 
 
-    ec = edge_cut(g_obj);
+    ec = edge_cut(g_obj,options);
 
     res->partition =  ec->partition;
 

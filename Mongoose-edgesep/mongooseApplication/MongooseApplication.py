@@ -12,7 +12,7 @@ with open(sys.argv[1], 'w', newline='') as csvfile:
 	spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|',quoting=csv.QUOTE_MINIMAL)
 	# Each column of the csv file
 	
-	header = ["Loading", "Search Modules", "Wrapping", "Edge Cut",  "cut size", "cut cost", "imbalance"]
+	header = ["Edge Cut",  "cut size", "cut cost", "imbalance"]
 	
 	spamwriter.writerow(["matrixName"]+header)
 	
@@ -25,6 +25,7 @@ with open(sys.argv[1], 'w', newline='') as csvfile:
 			# Get back the result of Mongoose execution
 			mongres = os.popen(cmd).readlines()
 			for line in mongres:
+				print(line)
 				# Remove additional quote and split key:value
 				line = line.replace("'","")
 				key, value = line.split(":")

@@ -23,6 +23,7 @@
 #include "../Include/Mongoose_Logger.hpp"
 #include "../Include/Mongoose_Sanitize.hpp"
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -46,6 +47,7 @@ Graph *read_graph(const char *filename)
 
     MM_typecode matcode;
     cs *A = read_matrix(filename, matcode);
+
     if (!A)
     {
         LogError("Error reading matrix from file\n");

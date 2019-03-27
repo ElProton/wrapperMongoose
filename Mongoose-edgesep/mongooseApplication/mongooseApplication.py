@@ -7,11 +7,11 @@ import sys
 import io
 
 # All the file that it will be partitionning by Mongoose
-filenames = [os.path.join(root,filename) for root, directories, filenames in os.walk('../../../Matrix/') for filename in filenames if filename]
+filenames = [os.path.join(root,filename) for root, directories, filenames in os.walk('../../../matrix/') for filename in filenames if filename]
 
 
 with open(sys.argv[1], 'w', newline='') as csvfile:
-	spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|',quoting=csv.QUOTE_MINIMAL)
+	spamwriter = csv.writer(csvfile, delimiter=';', quotechar='|',quoting=csv.QUOTE_MINIMAL)
 	# Each column of the csv file
 	
 	header = ["Edge Cut",  "cut size", "cut cost", "imbalance"]
@@ -35,7 +35,7 @@ with open(sys.argv[1], 'w', newline='') as csvfile:
 				if value != "":
 					resdic[key.strip()] = value.strip()
 
-			reslist = [testfile.replace("../../../Matrix/","")]
+			reslist = [testfile.replace("../../../matrix/","")]
 			for col in header:
 				reslist += [resdic[col]]
 

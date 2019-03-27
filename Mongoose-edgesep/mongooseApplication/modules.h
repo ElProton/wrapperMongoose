@@ -11,11 +11,13 @@ struct node_t {
 	struct node_t *prev, *next;
 	int vertex;
 	struct class_t *class;
+	int index;
 };
 
 struct class_t {
 	struct class_t *prev, *next;
 	struct node_t *nodes;
+	int begin_index;
 	int size;
 	int marks;
 	int split;

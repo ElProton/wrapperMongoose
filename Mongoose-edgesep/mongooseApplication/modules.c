@@ -17,6 +17,7 @@ struct class_t *class_new()
 	C->size = 0;
 	C->marks = 0;
 	C->split = 0;
+	C->insert = 0;
 
 	C->Lpos = -1;
 	C->Kpos = -1;
@@ -39,7 +40,7 @@ void print_class(struct class_t *X)
 void print_class_index(struct class_t *X)
 {
 	for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next)
-		printf("%d ", x->index + 1);
+		printf("%d ", X->begin_index);
 }
 
 void print_partition(struct class_t *class_head)
@@ -76,6 +77,7 @@ void class_insert(struct class_t *C, struct class_t *X)
 
 void class_insert_gauche(struct class_t *C, struct class_t *X)
 {
+	X->begin_index = C->begin_index + C->size;
 	X->next = C;
 	X->prev = C->prev;
 	X->prev->next = X;
@@ -90,7 +92,6 @@ void class_remove(struct class_t *X)
 
 void node_insert(struct node_t *x, struct class_t *C)
 {
-	x->index = C->begin_index + C->size;
 	x->class = C;
 	C->size++;
 	struct node_t *head = C->nodes;
@@ -133,9 +134,10 @@ void transfer_gauche(struct class_t *X, struct class_t *Y, struct node_t *x)
 		return;
 	node_remove(x);
 	node_insert_gauche(x, Y);
+	Y->begin_index--;
 }
 
-void refine(struct module_ctx_t *ctx, struct node_t *x)
+void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 {
 	int *Ap = ctx->A->p;
 	int *Aj = ctx->A->j;
@@ -160,7 +162,17 @@ void refine(struct module_ctx_t *ctx, struct node_t *x)
 			//printf(" is properly split by %d\n", y->vertex);
 			// printf(" x : %d\n", x->vertex);
 			struct class_t *Ya = class_new();
-			class_insert(Y, Ya);
+			if((X->begin_index <= ind_pivot && ind_pivot <= Y->begin_index)
+			|| (Y->begin_index <= ind_pivot && ind_pivot <= X->begin_index)){
+				//printf("insertion a gauche\n");
+				class_insert_gauche(Y,Ya);
+				Y->insert = 1;
+			}
+			else{
+				//printf("insertion a droite\n");
+				class_insert(Y, Ya);
+				Y->insert = -1;
+			}
 			Y->split = 1;
 			
 		}
@@ -173,11 +185,16 @@ void refine(struct module_ctx_t *ctx, struct node_t *x)
 		if (!Y->split)
 			continue;
 
-		printf("%d\n",y->next->vertex);
-		struct class_t *Ya = Y->next;
-		transfer(Y, Ya, y);
-		printf("sa : %d\n" , Ya->begin_index);
-		printf("s : %d\n" , Y->begin_index);
+		if(Y->insert == -1){
+			//printf("transfert a droite\n");
+			struct class_t *Ya = Y->next;
+			transfer(Y, Ya, y);
+		}
+		else if(Y->insert == 1){
+			//printf("transfert a gauche\n");
+			struct class_t *Ya = Y->prev;
+			transfer_gauche(Y, Ya, y);
+		}
 	}
 
 	for (int it = Nx_start; it < Nx_end; it++) {
@@ -362,7 +379,6 @@ struct modular_partition_t *modular_partition(spasm * A)
 	nodes = spasm_malloc(n * sizeof(*nodes));
 	for (int i = 0; i < n; i++) {
 		nodes[i].vertex = i;
-		nodes[i].index = i;
 		node_insert(&nodes[i], initial_class);
 	}
 
@@ -443,6 +459,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 		}
 	ctx.K[ctx.K_hi++] = Z;
 
+	int ind_pivot = pivot->class->begin_index;
 	while (ctx.L_sp > 0 || ctx.K_lo < ctx.K_hi) {
 		print_partition(class_head);
 		print_partition_index(class_head);
@@ -454,7 +471,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 			print_class(X);
 			printf("\n");*/
 			struct node_t *x = X->nodes->next;
-			refine(&ctx, x);
+			refine(&ctx, x, ind_pivot);
 		} else {
 			struct class_t *X = ctx.L[--ctx.L_sp];
 			X->Lpos = -1;
@@ -464,7 +481,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 			printf("\n");*/
 			for (struct node_t * x = X->nodes->next; x != X->nodes;
 			     x = x->next)
-				refine(&ctx, x);
+				refine(&ctx, x, ind_pivot);
 		}
 	}
 	free(ctx.L);
@@ -480,14 +497,14 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm_triplet *M = spasm_triplet_alloc(0, 0, n, -1, 0);
 	for (struct class_t * X = class_head->next; X != class_head;
 	     X = X->next) {
-		if(X->size != 0) {
+		//if(X->size != 0) {
 			for (struct node_t *u = X->nodes->next; u != X->nodes;
 				 u = u->next) {
 				module[u->vertex] = m;
 				spasm_add_entry(M, m, u->vertex, 1);
 			}
 			m++;
-		}
+		//}
 	}
 
 	spasm_triplet *S = spasm_triplet_alloc(n, n, spasm_nnz(A), -1, 0);
@@ -541,7 +558,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm *M_comp = spasm_malloc(sizeof(M_comp));
 	M_comp = spasm_compress(M);
 	int *Mptest = M_comp -> p;
-
+	printf("%d\n",ind_pivot);
 	/*int v;
 	for(v = 0; v <= M_comp->n; v++){
 		if(Mptest[v]==1)

@@ -146,10 +146,10 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 	struct class_t *X = x->class;
 	struct node_t *nodes = ctx->nodes;
 
-	// printf("Refine with x = %d / N(x) = ", x->vertex + 1);
-	// for (int px = Nx_start; px < Nx_end; px++)
-	//      printf("%d ", Aj[px] + 1);
-	// printf("\n");
+	 /*printf("Refine with x = %d / N(x) = ", x->vertex + 1);
+	 for (int px = Nx_start; px < Nx_end; px++)
+	      printf("%d ", Aj[px] + 1);
+	 printf("\n");*/
 	for (int it = Nx_start; it < Nx_end; it++) {
 		struct node_t *y = &nodes[Aj[it]];
 		y->class->marks++;
@@ -160,18 +160,18 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 		struct class_t *Y = y->class;
 		if (Y != X && Y->marks > 0 && Y->marks < Y->size) {
 			//printf(" is properly split by %d\n", y->vertex);
-			// printf(" x : %d\n", x->vertex);
+			printf(" x_ind : %d v_ind : %d y_ind : %d\n", X->begin_index,ind_pivot,Y->begin_index);
 			struct class_t *Ya = class_new();
 			if((X->begin_index <= ind_pivot && ind_pivot <= Y->begin_index)
 			|| (Y->begin_index <= ind_pivot && ind_pivot <= X->begin_index)){
-				//printf("insertion a gauche\n");
-				class_insert_gauche(Y,Ya);
-				Y->insert = 1;
+				//printf("insertion a droite\n");
+				class_insert(Y,Ya);
+				Y->insert = -1;
 			}
 			else{
-				//printf("insertion a droite\n");
-				class_insert(Y, Ya);
-				Y->insert = -1;
+				//printf("insertion a gauche\n");
+				class_insert_gauche(Y, Ya);
+				Y->insert = 1;
 			}
 			Y->split = 1;
 			
@@ -253,6 +253,7 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 }
 
 int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
+	printf("pot %d : %d  pot %d : %d\n",i,potentiel[i],j,potentiel[j]);
 	int *Ap = A->p;
 	int *Aj = A->j;
 	int *Mj = M->j;
@@ -275,7 +276,7 @@ int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
 				}
 			}
 			if(edge_i != edge_j){
-				//printf("casseur %d entre %d et %d\n",a_index,i,j);
+				printf("casseur %d entre %d et %d\n",a_index,i,j);
 				goto casseur;
 			}
 		}
@@ -297,7 +298,7 @@ int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
 				}
 			}
 			if(edge_i != edge_j){
-				//printf("casseur %d entre %d et %d\n",a_index,i,j);
+				printf("casseur %d entre %d et %d\n",a_index,i,j);
 				goto casseur;
 			}
 		}
@@ -317,46 +318,74 @@ void clean_decomposition(spasm *M, spasm *A, int ind_v){
 
 	int del = 0;
 	for(int i=0; i<n; i++){
-		potentiel[i] = Mp[i];
+		potentiel[i] = Mp[i+1];
+		printf("pot%d : %d\n",i,Mp[i+1]);
 	}
-	int b_d = n;
-	int b_g = ind_v;
-	for(int i=b_g; i > 0; i--){
-		//printf("g : %d d : %d\n",i,b_d);
-		for(int j=b_d-1; j > i; j--){
-			//printf("i: %d et j : %d\n",i,j);
-			if(!fraction(potentiel,M,A,n,i,j)){
 
-				for(int k = i+1; k<=j; k++){
-					//printf("k: %d \n",k);
-					potentiel[k] = -1;
+	int b_d = 0;
+	int b_g = ind_v;
+	printf("g : %d d : %d\n",b_g,b_d);
+	for(int i=b_g; i < n-1; i++){
+		printf("g : %d d : %d\n",i,b_d);
+		for(int j=b_d; j < i; j++){
+			if(j <= ind_v){
+				printf("i: %d et j : %d n : %d\n",i,j,n);
+				if(!fraction(potentiel,M,A,n,n-i-1,n-j-1)){
+
+					for(int k = i-1; k>=j; k--){
+						printf("k: %d \n",k);
+						potentiel[n - k] = -1;
+						del++;
+					}
+					b_g = i;
+					if(j == b_d){
+						b_d = i;
+						potentiel[n - b_d] = -1;
+						del++;
+					}
+			
+					break;
+				}
+			}
+		}
+	}
+
+
+	b_g = n - 1;
+	for(int j=b_d + 1; j < b_g; j++){
+			printf("i: %d et j : %d\n",b_g,j);
+			if(!fraction(potentiel,M,A,n,n-b_g-1,n-j-1)){
+
+				for(int k = b_g-1; k>=j; k--){
+					printf("k: %d \n",k);
+					potentiel[n - k] = -1;
 					del++;
 				}
-				b_g = i;
 				if(j == b_d){
-					b_d = i;
-					potentiel[b_d] = -1;
+					potentiel[n - b_d] = -1;
 					del++;
 				}
 			
 				break;
 			}
 		}
-	}
+
+
+
 
 	int *Mptest = calloc(M->n,sizeof(int));
-	int z = 0;
+	Mptest[0] = 0;
+	int z = 1;
 	for(int i=0;i<M->n;i++){
 		if(potentiel[i] != -1){
 			Mptest[z] = potentiel[i];
 			z++;
 		}
 	}
-	Mptest[n - del] = Mp[M->n];
 
 	M->p = Mptest;
 	M->n = n - del;
-	//printf("%d\n",del);
+	printf("%d\n",del);
 }
 
 
@@ -385,8 +414,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 	int *queue = spasm_malloc(n * sizeof(int));
 	int *mark = spasm_calloc(n, sizeof(int));
 	int lo = 0, hi = 0;
-	print_partition(class_head);
-	print_partition_index(class_head);
+	//print_partition(class_head);
+	//print_partition_index(class_head);
 
 
 	struct node_t *pivot = &nodes[0];
@@ -461,8 +490,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 	int ind_pivot = pivot->class->begin_index;
 	while (ctx.L_sp > 0 || ctx.K_lo < ctx.K_hi) {
-		print_partition(class_head);
-		print_partition_index(class_head);
+		//print_partition(class_head);
+		//print_partition_index(class_head);
 		if (ctx.L_sp == 0) {
 			struct class_t *X = ctx.K[ctx.K_lo++];
 			X->Kpos = -1;
@@ -558,10 +587,12 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm *M_comp = spasm_malloc(sizeof(M_comp));
 	M_comp = spasm_compress(M);
 	int *Mptest = M_comp -> p;
-	printf("%d\n",ind_pivot);
-	/*int v;
+	int *Mjtest = M_comp -> j;
+	/*printf("%d\n",ind_pivot);
+	int v;
 	for(v = 0; v <= M_comp->n; v++){
-		if(Mptest[v]==1)
+		//printf("mp : %d\n",Mjtest[Mptest[v]]);
+		if(Mjtest[Mptest[v]]==0)
 			break;
 	}
 
@@ -570,7 +601,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	}
 
 
-	clean_decomposition(M_comp,A,v);
+	clean_decomposition(M_comp,A,M_comp->n - v - 1);
 	Mptest = M_comp -> p;
 	for(int i = 0; i <= M_comp->n; i++){
 		printf("Mpclean%d : %d\n",i,Mptest[i]);

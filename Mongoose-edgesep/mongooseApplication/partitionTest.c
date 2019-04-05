@@ -54,74 +54,84 @@ int main(int argc, char **argv)
 
 	clock_t loading_matrix_time = clock() - begin_time;
 	msec = loading_matrix_time * 1000 / CLOCKS_PER_SEC;
-	printf("Loading : %f s \n",msec/1000.0);
+	printf("Loading : %f \n",msec/1000.0);
 
 
 	int64_t *ap64;
 	double *w,*x;
+	
+	int n_module = A -> n;
 	spasm *M = NULL;
 	if (mode=='B') {
 		struct modular_partition_t *partition = modular_partition(A);
 		spasm *Q = partition->Q;
 
-		M = partition -> M;
-		int Mn = M->n;
-		int *Mp = M->p;
-		int *Mj = M->j;
-		int *Qj = Q->j;
-		int *Qp = Q->p;
-		int n_edges = spasm_nnz(Q);
-		//printf("n-e : %d",n_edges);
-		w = spasm_calloc(Mn+1, sizeof(double));
-		x = spasm_calloc(n_edges+1, sizeof(double));
-		ap64 = spasm_calloc(Mn + 1, sizeof(int64_t));
-		ap64[0] = 0;
-		for (int i = 0; i < Mn; i++){
-			w[i] = Mp[i+1]-Mp[i];
-			/*printf("w%d : %f  [",i,w[i]);
-			for (int k=Mp[i]; k < Mp[i+1]; k++)
-				printf("%d ", Mj[k]);
-			printf("]\n");*/
-		}
-		int limit = 0;
-		int a = 0;
-		for (int i = 0; i < Mn; i++){
-			
-			int n_neighbors = Qp[i+1]-Qp[i];
-			int j = 0;
-			while(j < n_neighbors){
-				double neigh_weight = w[Qj[limit+j]];
-				double mod_weight = w[i];
-				x[a] = neigh_weight*mod_weight;
-				//printf("origine: %d, arrivée : %d et poids : %f indice: %d \n",i, Qj[limit+j],x[a],limit);
-				j++;
-				a++;
+		if(Q->n == n_module){
+			n_module = 0;
+		}else{
+
+			M = partition -> M;
+			int Mn = M->n;
+			int *Mp = M->p;
+			int *Mj = M->j;
+			int *Qj = Q->j;
+			int *Qp = Q->p;
+			int n_edges = spasm_nnz(Q);
+			//printf("n-e : %d",n_edges);
+			w = spasm_calloc(Mn+1, sizeof(double));
+			x = spasm_calloc(n_edges+1, sizeof(double));
+			ap64 = spasm_calloc(Mn + 1, sizeof(int64_t));
+			ap64[0] = 0;
+			for (int i = 0; i < Mn; i++){
+				w[i] = Mp[i+1]-Mp[i];
+				/*printf("w%d : %f  [",i,w[i]);
+				for (int k=Mp[i]; k < Mp[i+1]; k++)
+					printf("%d ", Mj[k]);
+				printf("]\n");*/
 			}
-		limit = limit + n_neighbors;
-		ap64[i+1] = limit;
-		//printf("ap : %ld \n",ap64[i]);
+			int limit = 0;
+			int a = 0;
+			for (int i = 0; i < Mn; i++){
+			
+				int n_neighbors = Qp[i+1]-Qp[i];
+				int j = 0;
+				while(j < n_neighbors){
+					double neigh_weight = w[Qj[limit+j]];
+					double mod_weight = w[i];
+					x[a] = neigh_weight*mod_weight;
+					//printf("origine: %d, arrivée : %d et poids : %f indice: %d \n",i, Qj[limit+j],x[a],limit);
+					j++;
+					a++;
+				}
+			limit = limit + n_neighbors;
+			ap64[i+1] = limit;
+			//printf("ap : %ld \n",ap64[i]);
+			}
+
+			A = partition -> Q;
+			n_module = A -> n;
+
+			/*for(int i=0;i<n_edges;i++){
+				printf("x%d : %f\n",i,x[i]);
+			}
+			for(int i=0;i<Mn;i++){
+				printf("w%d : %f\n",i,w[i]);
+			}*/
 		}
 
-		A = partition -> Q;
-
-		/*for(int i=0;i<n_edges;i++){
-			printf("x%d : %f\n",i,x[i]);
-		}
-		for(int i=0;i<Mn;i++){
-			printf("w%d : %f\n",i,w[i]);
-		}*/
 	}
 
 	clock_t search_modules_time = clock() - loading_matrix_time;
 	msec = search_modules_time * 1000 / CLOCKS_PER_SEC;
-	printf("Search Modules : %f s \n", msec/1000.0);
+	printf("Search Modules : %f \n", msec/1000.0);
 
 	int n = A -> n;
+	int nnz = spasm_nnz(A);
+	printf("n : %d \n", n_module);
+	printf("nnz : %d \n", nnz);
 	
 	int *Ap = A->p;
 	int *Aj = A->j;
-	int nzmax = A->nzmax;
-
 
 
 	int64_t *aj64 = spasm_calloc(spasm_nnz(A), sizeof(int64_t));
@@ -151,20 +161,20 @@ int main(int argc, char **argv)
 		
 	g->n = n;
 	g->m = n;
-	g->nz = spasm_nnz(A);
+	g->nz = nnz;
 	g->p = ap64;
 	g->i = aj64;
     	
 
 	clock_t wrapping_time = clock() - search_modules_time;
 	msec = wrapping_time * 1000 / CLOCKS_PER_SEC;
-	printf("Wrapping : %f s \n", msec/1000.0);
+	printf("Wrapping : %f \n", msec/1000.0);
 
 	EdgeCutC* ec = connector_edge_cut(g);
 
 	clock_t edge_cut_time = clock() - wrapping_time;
 	msec = edge_cut_time * 1000 / CLOCKS_PER_SEC;
-	printf("Edge Cut : %f s \n", msec/1000.0);
+	printf("Edge Cut : %f \n", msec/1000.0);
 
 	free(g);
 	free(aj64);
@@ -173,7 +183,9 @@ int main(int argc, char **argv)
 
 	/*bool *cut = ec->partition;
 	for(int i=0;i<ec->n;i++){
-		printf("cut : %d\n",cut[i]);
+		if(cut[i]==1){
+			printf("w : %d  x : %d\n",w[i],x[i]);
+		}
 	}*/
 	//printf("sum : %d\n",sum);
 

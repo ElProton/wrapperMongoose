@@ -160,19 +160,24 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 		struct class_t *Y = y->class;
 		if (Y != X && Y->marks > 0 && Y->marks < Y->size) {
 			//printf(" is properly split by %d\n", y->vertex);
-			printf(" x_ind : %d v_ind : %d y_ind : %d\n", X->begin_index,ind_pivot,Y->begin_index);
+			//printf(" x_ind : %d v_ind : %d y_ind : %d\n", X->begin_index,ind_pivot,Y->begin_index);
 			struct class_t *Ya = class_new();
-			if((X->begin_index <= ind_pivot && ind_pivot <= Y->begin_index)
-			|| (Y->begin_index <= ind_pivot && ind_pivot <= X->begin_index)){
-				//printf("insertion a droite\n");
-				class_insert(Y,Ya);
-				Y->insert = -1;
-			}
-			else{
-				//printf("insertion a gauche\n");
-				class_insert_gauche(Y, Ya);
-				Y->insert = 1;
-			}
+			//if(Y->insert == 0){
+				/*if((X->begin_index <= ind_pivot &&
+					ind_pivot <= Y->begin_index)
+				|| (Y->begin_index <= ind_pivot &&
+					ind_pivot <= X->begin_index)){*/
+
+					printf("insertion a droite\n");
+					class_insert(Y,Ya);
+					Y->insert = -1;
+				/*}
+				else{
+					//printf("insertion a gauche\n");
+					class_insert_gauche(Y, Ya);
+					Y->insert = 1;
+				}*/
+			//}
 			Y->split = 1;
 			
 		}
@@ -185,16 +190,16 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 		if (!Y->split)
 			continue;
 
-		if(Y->insert == -1){
-			//printf("transfert a droite\n");
+		/*if(Y->insert == -1){
+			*/printf("transfert a droite\n");
 			struct class_t *Ya = Y->next;
 			transfer(Y, Ya, y);
-		}
+		/*}
 		else if(Y->insert == 1){
 			//printf("transfert a gauche\n");
 			struct class_t *Ya = Y->prev;
 			transfer_gauche(Y, Ya, y);
-		}
+		}*/
 	}
 
 	for (int it = Nx_start; it < Nx_end; it++) {
@@ -414,7 +419,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	int *queue = spasm_malloc(n * sizeof(int));
 	int *mark = spasm_calloc(n, sizeof(int));
 	int lo = 0, hi = 0;
-	//print_partition(class_head);
+	print_partition(class_head);
 	//print_partition_index(class_head);
 
 
@@ -526,14 +531,14 @@ struct modular_partition_t *modular_partition(spasm * A)
 	spasm_triplet *M = spasm_triplet_alloc(0, 0, n, -1, 0);
 	for (struct class_t * X = class_head->next; X != class_head;
 	     X = X->next) {
-		//if(X->size != 0) {
+		if(X->size != 0) {
 			for (struct node_t *u = X->nodes->next; u != X->nodes;
 				 u = u->next) {
 				module[u->vertex] = m;
 				spasm_add_entry(M, m, u->vertex, 1);
 			}
 			m++;
-		//}
+		}
 	}
 
 	spasm_triplet *S = spasm_triplet_alloc(n, n, spasm_nnz(A), -1, 0);

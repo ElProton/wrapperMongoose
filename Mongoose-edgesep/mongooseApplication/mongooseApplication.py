@@ -14,16 +14,17 @@ with open(sys.argv[1], 'w', newline='') as csvfile:
 	spamwriter = csv.writer(csvfile, delimiter=';', quotechar='|',quoting=csv.QUOTE_MINIMAL)
 	# Each column of the csv file
 	
-	header = ["Edge Cut",  "cut size", "cut cost", "imbalance"]
+	header = ["n","nnz","Search Modules","Edge Cut", "cut cost", "imbalance"]
 	
 	spamwriter.writerow(["matrixName"]+header)
 	
 
 	for testfile in filenames:
+
 		try:
 			resdic = dict()
 
-			cmd = 'cat '+testfile+' | ./connectorTest ' if sys.argv[2] != "B" else 'cat '+testfile+' | ./connectorTest --B'
+			cmd = 'cat '+testfile+' | ./partitionTest ' if sys.argv[2] != "B" else 'cat '+testfile+' | ./partitionTest --B'
 			# Get back the result of Mongoose execution
 			mongres = subprocess.Popen([cmd],stdout=subprocess.PIPE, shell=True)
 			for line in mongres.stdout.readlines():
@@ -44,4 +45,3 @@ with open(sys.argv[1], 'w', newline='') as csvfile:
 		except :
 			print(sys.exc_info()[0])
 			pass
-

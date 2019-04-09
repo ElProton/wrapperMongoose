@@ -168,7 +168,7 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 				|| (Y->begin_index <= ind_pivot &&
 					ind_pivot <= X->begin_index)){*/
 
-					printf("insertion a droite\n");
+					//printf("insertion a droite\n");
 					class_insert(Y,Ya);
 					Y->insert = -1;
 				/*}
@@ -190,16 +190,16 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 		if (!Y->split)
 			continue;
 
-		/*if(Y->insert == -1){
-			*/printf("transfert a droite\n");
+		if(Y->insert == -1){
+			//printf("transfert a droite\n");
 			struct class_t *Ya = Y->next;
 			transfer(Y, Ya, y);
-		/*}
+		}
 		else if(Y->insert == 1){
 			//printf("transfert a gauche\n");
 			struct class_t *Ya = Y->prev;
 			transfer_gauche(Y, Ya, y);
-		}*/
+		}
 	}
 
 	for (int it = Nx_start; it < Nx_end; it++) {
@@ -257,7 +257,7 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 
 }
 
-int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
+/*int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
 	printf("pot %d : %d  pot %d : %d\n",i,potentiel[i],j,potentiel[j]);
 	int *Ap = A->p;
 	int *Aj = A->j;
@@ -391,7 +391,7 @@ void clean_decomposition(spasm *M, spasm *A, int ind_v){
 	M->p = Mptest;
 	M->n = n - del;
 	printf("%d\n",del);
-}
+}*/
 
 
 struct modular_partition_t *modular_partition(spasm * A)
@@ -419,7 +419,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	int *queue = spasm_malloc(n * sizeof(int));
 	int *mark = spasm_calloc(n, sizeof(int));
 	int lo = 0, hi = 0;
-	print_partition(class_head);
+	//print_partition(class_head);
 	//print_partition_index(class_head);
 
 
@@ -441,6 +441,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	transfer(initial_class, class, pivot);
 
 
+	/* Partie de code du départ (ne fait aucune separation dans le cas d'un matrice 	   sans arretes */
 
 	/*for (int i = 0; i < n; i++) {
 
@@ -522,7 +523,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	free(ctx.K);
 
 	print_partition(class_head);
-	print_partition_index(class_head);
+	//print_partition_index(class_head);
 	int m = 0;
 	int *module = spasm_malloc(sizeof(int) * n);
 	// debugging purposes

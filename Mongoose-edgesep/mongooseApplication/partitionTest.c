@@ -52,7 +52,9 @@ int main(int argc, char **argv)
 	spasm *A = spasm_compress(T);
 	spasm_triplet_free(T);
 
-	clock_t loading_matrix_time = clock() - begin_time;
+	clock_t end_time = clock();
+	clock_t loading_matrix_time = end_time - begin_time;
+	begin_time = end_time;
 	msec = loading_matrix_time * 1000 / CLOCKS_PER_SEC;
 	printf("Loading : %f \n",msec/1000.0);
 
@@ -80,8 +82,6 @@ int main(int argc, char **argv)
 			//printf("n-e : %d",n_edges);
 			w = spasm_calloc(Mn+1, sizeof(double));
 			x = spasm_calloc(n_edges+1, sizeof(double));
-			ap64 = spasm_calloc(Mn + 1, sizeof(int64_t));
-			ap64[0] = 0;
 			for (int i = 0; i < Mn; i++){
 				w[i] = Mp[i+1]-Mp[i];
 				/*printf("w%d : %f  [",i,w[i]);
@@ -104,24 +104,17 @@ int main(int argc, char **argv)
 					a++;
 				}
 			limit = limit + n_neighbors;
-			ap64[i+1] = limit;
-			//printf("ap : %ld \n",ap64[i]);
 			}
 
 			A = partition -> Q;
 			n_module = A -> n;
-
-			/*for(int i=0;i<n_edges;i++){
-				printf("x%d : %f\n",i,x[i]);
-			}
-			for(int i=0;i<Mn;i++){
-				printf("w%d : %f\n",i,w[i]);
-			}*/
 		}
 
 	}
 
-	clock_t search_modules_time = clock() - loading_matrix_time;
+	end_time = clock();
+	clock_t search_modules_time = end_time - begin_time;
+	begin_time = end_time;
 	msec = search_modules_time * 1000 / CLOCKS_PER_SEC;
 	printf("Search Modules : %f \n", msec/1000.0);
 
@@ -141,6 +134,11 @@ int main(int argc, char **argv)
 		aj64[i] = Aj[i];
 	}
 
+	ap64 = spasm_calloc(n + 1, sizeof(int64_t));
+	for (int i = 0; i <= n; i++){
+		ap64[i] = Ap[i];
+	}
+
 	GraphC *g =  spasm_malloc(sizeof(*g));
 
 	if(M!=NULL){
@@ -149,11 +147,6 @@ int main(int argc, char **argv)
 
 	}
 	else{
-		
-		ap64 = spasm_calloc(n + 1, sizeof(int64_t));
-		for (int i = 0; i <= n; i++){
-			ap64[i] = Ap[i];
-		}
 
 		g->w = NULL;
 		g->x = NULL;
@@ -166,13 +159,17 @@ int main(int argc, char **argv)
 	g->i = aj64;
     	
 
-	clock_t wrapping_time = clock() - search_modules_time;
+	end_time = clock();
+	clock_t wrapping_time = end_time - begin_time;
+	begin_time = end_time;
 	msec = wrapping_time * 1000 / CLOCKS_PER_SEC;
 	printf("Wrapping : %f \n", msec/1000.0);
 
 	EdgeCutC* ec = connector_edge_cut(g);
 
-	clock_t edge_cut_time = clock() - wrapping_time;
+	end_time = clock();
+	clock_t edge_cut_time = end_time - begin_time;
+	begin_time = end_time;
 	msec = edge_cut_time * 1000 / CLOCKS_PER_SEC;
 	printf("Edge Cut : %f \n", msec/1000.0);
 

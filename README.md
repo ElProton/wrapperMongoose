@@ -33,7 +33,7 @@ Tous les fichiers sont désormais centralisés dans mongooseApplication/
 
 L'executable prend la matrice sur son entrée stdin.
 
-cat Matrix/file.mtx | ./connectorTest
+cat Matrix/file.mtx | ./partitionTest
 
 Celui ci dispose aussi d'une option pouvant être mise à A ou B.(par défaut c'est A qui est choisie)
 
@@ -43,6 +43,4 @@ B : execute la recherche de partition modulaire sur la matrice d'entrée. Le ré
 
 #### TODO
 
-- corriger le passage par l'option B.
-
-- Modifier modules.c afin d'utiliser les permutations factorisantes dans l'algo de modular_partition. (sur ce sujet voir aussi : https://github.com/antonovvk/decmod/blob/master/dm.c implémentation C de la décomposition modulaire par permutation factorisante)
+- Implémenter la gestion de permutation factorisante

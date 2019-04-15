@@ -42,12 +42,13 @@ int main(int argc, char **argv)
 	
 	int *Ti = T->i;
 	int *Tj = T->j;
-	for (int px = 0; px < T->nz; px++)
+	for (int px = 0; px < T->nz; px++){
 		if (Ti[px] == Tj[px]) {
 			spasm_swap(Ti, px, T->nz - 1);
 			spasm_swap(Tj, px, T->nz - 1);
 			T->nz--;
 		}
+	}
 
 	spasm *A = spasm_compress(T);
 	spasm_triplet_free(T);
@@ -58,12 +59,14 @@ int main(int argc, char **argv)
 	msec = loading_matrix_time * 1000 / CLOCKS_PER_SEC;
 	printf("Loading : %f \n",msec/1000.0);
 
+	GraphC *g =  spasm_malloc(sizeof(*g));
+
+	g->w = NULL;
+	g->x = NULL;
 
 	int64_t *ap64;
 	double *w,*x;
-	
 	int n_module = A -> n;
-	spasm *M = NULL;
 	if (mode=='B') {
 		struct modular_partition_t *partition = modular_partition(A);
 		spasm *Q = partition->Q;
@@ -72,14 +75,14 @@ int main(int argc, char **argv)
 			n_module = 0;
 		}else{
 
-			M = partition -> M;
+			spasm *M = partition -> M;
 			int Mn = M->n;
 			int *Mp = M->p;
 			int *Mj = M->j;
 			int *Qj = Q->j;
 			int *Qp = Q->p;
 			int n_edges = spasm_nnz(Q);
-			//printf("n-e : %d",n_edges);
+
 			w = spasm_calloc(Mn+1, sizeof(double));
 			x = spasm_calloc(n_edges+1, sizeof(double));
 			for (int i = 0; i < Mn; i++){
@@ -99,7 +102,6 @@ int main(int argc, char **argv)
 					double neigh_weight = w[Qj[limit+j]];
 					double mod_weight = w[i];
 					x[a] = neigh_weight*mod_weight;
-					//printf("origine: %d, arrivée : %d et poids : %f indice: %d \n",i, Qj[limit+j],x[a],limit);
 					j++;
 					a++;
 				}
@@ -108,6 +110,9 @@ int main(int argc, char **argv)
 
 			A = partition -> Q;
 			n_module = A -> n;
+
+			g->w = w;
+			g->x = x;
 		}
 
 	}
@@ -123,34 +128,16 @@ int main(int argc, char **argv)
 	printf("n : %d \n", n_module);
 	printf("nnz : %d \n", nnz);
 	
-	int *Ap = A->p;
 	int *Aj = A->j;
-
-
 	int64_t *aj64 = spasm_calloc(spasm_nnz(A), sizeof(int64_t));
-
-	for (int i = 0; i < spasm_nnz(A); i++){
-		//printf("aj : %d \n",Aj[i]);
+	for (int i = 0; i < spasm_nnz(A); i++)
 		aj64[i] = Aj[i];
-	}
 
+
+	int *Ap = A->p;
 	ap64 = spasm_calloc(n + 1, sizeof(int64_t));
-	for (int i = 0; i <= n; i++){
+	for (int i = 0; i <= n; i++)
 		ap64[i] = Ap[i];
-	}
-
-	GraphC *g =  spasm_malloc(sizeof(*g));
-
-	if(M!=NULL){
-		g->w = w;
-		g->x = x;
-
-	}
-	else{
-
-		g->w = NULL;
-		g->x = NULL;
-	}
 		
 	g->n = n;
 	g->m = n;
@@ -178,13 +165,10 @@ int main(int argc, char **argv)
 	free(ap64);
 	spasm_csr_free(A);
 
-	/*bool *cut = ec->partition;
+	bool *cut = ec->partition;
 	for(int i=0;i<ec->n;i++){
-		if(cut[i]==1){
-			printf("w : %d  x : %d\n",w[i],x[i]);
-		}
-	}*/
-	//printf("sum : %d\n",sum);
+		printf("cut %d : %d\n",i,cut[i]);
+	}
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);

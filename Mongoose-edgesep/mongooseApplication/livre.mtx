@@ -1,0 +1,33 @@
+%%MatrixMarket matrix coordinate pattern symmetric
+%-------------------------------------------------------------------------------
+% UF Sparse Matrix Collection, Tim Davis
+% http://www.cise.ufl.edu/research/sparse/matrices/Bai/bfwb398
+% name: Bai/bfwb398
+% [BOUNDED FINLINE WAVEGUIDE EIGENMODES B SHULTZ AND S GEDNEY]
+% id: 295
+% date: 1994
+% author: B. Schultz, S. Gedney
+% ed: Z. Bai, D. Day, J. Demmel, J. Dongarra
+% fields: title A name id date author ed kind
+% kind: electromagnetics problem
+%-------------------------------------------------------------------------------
+11 11 19
+4 1
+6 1
+7 1
+3 2
+8 2
+10 3 
+11 3
+6 4
+9 4
+10 4
+8 5
+11 5
+9 6
+10 6
+11 7
+10 8
+11 8
+6 9
+11 10

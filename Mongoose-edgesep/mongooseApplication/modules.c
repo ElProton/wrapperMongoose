@@ -441,8 +441,6 @@ struct modular_partition_t *modular_partition(spasm * A)
 	transfer(initial_class, class, pivot);
 
 
-	/* Partie de code du départ (ne fait aucune separation dans le cas d'un matrice 	   sans arretes */
-
 	/*for (int i = 0; i < n; i++) {
 
 		if (mark[i])
@@ -522,7 +520,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	free(ctx.L);
 	free(ctx.K);
 
-	print_partition(class_head);
+	//print_partition(class_head);
 	//print_partition_index(class_head);
 	int m = 0;
 	int *module = spasm_malloc(sizeof(int) * n);

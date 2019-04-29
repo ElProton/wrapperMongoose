@@ -2,6 +2,7 @@
 #include "mini_spasm.h"
 
 #include "modules.h"
+#include "complement_cc.h"
 
 struct connected_component_partition_t {
 	spasm *A;

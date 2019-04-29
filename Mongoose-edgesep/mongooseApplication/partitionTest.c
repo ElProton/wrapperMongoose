@@ -122,7 +122,25 @@ int main(int argc, char **argv)
 
 	double *w,*x;
 	if (mode=='B') {
-		struct connected_component_partition_t *compo_partition = component_partition(A);
+        struct connected_component_t *test = spasm_malloc(sizeof(*test));
+
+
+
+		//int components = get_components_from_complement(A);
+
+		if(test->n > 1){
+			spasm *matrix_component = spasm_calloc(test->n,sizeof(*matrix_component));
+			for(int i = 0; i < test->n; i++){
+				
+			}
+			for(int i = 0; i < test->n; i++){
+				spasm *Z = matrix_component[i];
+				struct connected_component_partition_t  *compo_partition = component_partition(Z);
+			}
+		}
+		else{
+			struct connected_component_partition_t *compo_partition = component_partition(A);
+		}
 
 		A = compo_partition->A;
 		w = compo_partition->w;

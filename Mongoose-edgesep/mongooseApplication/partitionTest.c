@@ -4,71 +4,74 @@
 #include <err.h>
 #include <time.h>
 
+
+#include "Mongoose_EdgeCut_Connector.h"
+#include "mini_spasm.h"
+
 #include "partitionTest.h"
 
-struct connected_component_partition_t *component_partition(spasm * A)
-{
-	int An = A -> n;
-	double *w,*x;
-	struct modular_partition_t *partition = modular_partition(A);
-	spasm *Q = partition->Q;
+struct component_partition_t *component_partition(spasm *A){
+		spasm *B = A;
 
-	struct connected_component_partition_t *result = spasm_malloc(sizeof(*result));
+		double *w,*x;
+		int n_module = A -> n;
+		struct modular_partition_t *partition = modular_partition(A);
+		struct component_partition_t *result = malloc(sizeof(*result));
+		spasm *Q = partition->Q;
 
-	if(Q->n == An){
-		result->w = NULL;
-		result->x = NULL;
-		result->A = A;
-	}else{
-		
-		spasm *M = partition -> M;
-		int Mn = M->n;
-		int *Mp = M->p;
-		int *Mj = M->j;
-		//int *Mj = M->j;
-		int *Qj = Q->j;
-		int *Qp = Q->p;
-		int n_edges = spasm_nnz(Q);
-		w = spasm_calloc(Mn+1, sizeof(*w));
-		x = spasm_calloc(n_edges+1, sizeof(*x));
-		for (int i = 0; i < Mn; i++){
-			w[i] = Mp[i+1]-Mp[i];
-			/*printf("w%d : %f  [",i,w[i]);
-			for (int k=Mp[i]; k < Mp[i+1]; k++)
-				printf("%d ", Mj[k]);
-			printf("]\n");*/
-		}
-		
-		int limit = 0;
-		int a = 0;
-		for (int i = 0; i < Mn; i++){		
-			int n_neighbors = Qp[i+1]-Qp[i];
-			int j = 0;
+		if(Q->n == n_module){
+			result->w = NULL;
+			result->x = NULL;
+			result->A = A;
+		}else{
 
-			while(j < n_neighbors){
-				double neighbors_weight = w[Qj[limit+j]];
-				double module_weight = w[i];
-				x[a] = neighbors_weight * module_weight;
-				j++;
-				a++;
+			spasm *M = partition -> M;
+			int Mn = M->n;
+			int *Mp = M->p;
+			int *Mj = M->j;
+			int *Qj = Q->j;
+			int *Qp = Q->p;
+			int n_edges = spasm_nnz(Q);
+
+			w = spasm_calloc(Mn+1, sizeof(double));
+			x = spasm_calloc(n_edges+1, sizeof(double));
+			for (int i = 0; i < Mn; i++){
+				w[i] = Mp[i+1]-Mp[i];
+				/*printf("w%d : %f  [",i,w[i]);
+				for (int k=Mp[i]; k < Mp[i+1]; k++)
+					printf("%d ", Mj[k]);
+				printf("]\n");*/
+			}
+			int limit = 0;
+			int a = 0;
+			for (int i = 0; i < Mn; i++){
+			
+				int n_neighbors = Qp[i+1]-Qp[i];
+				int j = 0;
+				while(j < n_neighbors){
+					double neigh_weight = w[Qj[limit+j]];
+					double mod_weight = w[i];
+					x[a] = neigh_weight*mod_weight;
+					j++;
+					a++;
+				}
+			limit = limit + n_neighbors;
 			}
 
-		limit = limit + n_neighbors;
+			B = partition -> Q;
+			n_module = B -> n;
+
+			result->A = B;
+			result->w = w;
+			result->x = x;
 		}
 
-		result->A = partition -> Q;
-
-		result->w = w;
-		result->x = x;
-	}
-	
-	return result;
-
+		return result;
 }
 
 int main(int argc, char **argv)
 {
-	int ch,time_sec;
+	int ch,msec;
 	struct option longopts[6] = {
 		{"A", no_argument, NULL, 'A'},
 		{"B", no_argument, NULL, 'B'},
@@ -110,59 +113,36 @@ int main(int argc, char **argv)
 	spasm_triplet_free(T);
 
 	clock_t end_time = clock();
-	clock_t time = end_time - begin_time;
+	clock_t loading_matrix_time = end_time - begin_time;
 	begin_time = end_time;
-	time_sec = time * 1000 / CLOCKS_PER_SEC;
-	printf("Loading : %f \n",time_sec/1000.0);
+	msec = loading_matrix_time * 1000 / CLOCKS_PER_SEC;
+	printf("Loading : %f \n",msec/1000.0);
 
 	GraphC *g =  spasm_malloc(sizeof(*g));
 
 	g->w = NULL;
 	g->x = NULL;
 
-	double *w,*x;
+	int64_t *ap64;
 	if (mode=='B') {
-        struct connected_component_t *test = spasm_malloc(sizeof(*test));
+		struct component_partition_t *quotient = component_partition(A);
 
-
-
-		//int components = get_components_from_complement(A);
-
-		if(test->n > 1){
-			spasm *matrix_component = spasm_calloc(test->n,sizeof(*matrix_component));
-			for(int i = 0; i < test->n; i++){
-				
-			}
-			for(int i = 0; i < test->n; i++){
-				spasm *Z = matrix_component[i];
-				struct connected_component_partition_t  *compo_partition = component_partition(Z);
-			}
-		}
-		else{
-			struct connected_component_partition_t *compo_partition = component_partition(A);
-		}
-
-		A = compo_partition->A;
-		w = compo_partition->w;
-		x = compo_partition->x;
-
-		g->w = w;
-		g->x = x;
+		A = quotient -> A;
+		g->w = quotient -> w;
+		g->x = quotient -> x;
 	}
 
-
 	end_time = clock();
-	time = end_time - begin_time;
+	clock_t search_modules_time = end_time - begin_time;
 	begin_time = end_time;
-	time_sec = time * 1000 / CLOCKS_PER_SEC;
-	printf("Search Modules : %f \n", time_sec/1000.0);
+	msec = search_modules_time * 1000 / CLOCKS_PER_SEC;
+	printf("Search Modules : %f \n", msec/1000.0);
 
+	int n = A -> n;
 	int nnz = spasm_nnz(A);
-	int An = A->n;
-	printf("n : %d \n", An);
+	printf("n : %d \n", n);
 	printf("nnz : %d \n", nnz);
-
-	int n = A -> n;	
+	
 	int *Aj = A->j;
 	int64_t *aj64 = spasm_calloc(spasm_nnz(A), sizeof(int64_t));
 	for (int i = 0; i < spasm_nnz(A); i++)
@@ -170,7 +150,7 @@ int main(int argc, char **argv)
 
 
 	int *Ap = A->p;
-	int64_t *ap64 = spasm_calloc(n + 1, sizeof(int64_t));
+	ap64 = spasm_calloc(n + 1, sizeof(int64_t));
 	for (int i = 0; i <= n; i++)
 		ap64[i] = Ap[i];
 		
@@ -182,28 +162,24 @@ int main(int argc, char **argv)
     	
 
 	end_time = clock();
-	time = end_time - begin_time;
+	clock_t wrapping_time = end_time - begin_time;
 	begin_time = end_time;
-	time_sec = time * 1000 / CLOCKS_PER_SEC;
-	printf("Wrapping : %f \n", time_sec/1000.0);
+	msec = wrapping_time * 1000 / CLOCKS_PER_SEC;
+	printf("Wrapping : %f \n", msec/1000.0);
 
 	EdgeCutC* ec = connector_edge_cut(g);
 
 	end_time = clock();
-	time = end_time - begin_time;
+	clock_t edge_cut_time = end_time - begin_time;
 	begin_time = end_time;
-	time_sec = time * 1000 / CLOCKS_PER_SEC;
-	printf("Edge Cut : %f \n", time_sec/1000.0);
+	msec = edge_cut_time * 1000 / CLOCKS_PER_SEC;
+	printf("Edge Cut : %f \n", msec/1000.0);
 
 	free(g);
 	free(aj64);
 	free(ap64);
 	spasm_csr_free(A);
 
-	/*bool *cut = ec->partition;
-	for(int i=0;i<ec->n;i++){
-		printf("cut %d : %d\n",i,cut[i]);
-	}*/
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);

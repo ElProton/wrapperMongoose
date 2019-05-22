@@ -162,22 +162,22 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 			//printf(" is properly split by %d\n", y->vertex);
 			//printf(" x_ind : %d v_ind : %d y_ind : %d\n", X->begin_index,ind_pivot,Y->begin_index);
 			struct class_t *Ya = class_new();
-			//if(Y->insert == 0){
-				/*if((X->begin_index <= ind_pivot &&
+			if(Y->insert == 0){
+				if((X->begin_index <= ind_pivot &&
 					ind_pivot <= Y->begin_index)
 				|| (Y->begin_index <= ind_pivot &&
-					ind_pivot <= X->begin_index)){*/
+					ind_pivot <= X->begin_index)){
 
 					//printf("insertion a droite\n");
 					class_insert(Y,Ya);
 					Y->insert = -1;
-				/*}
+				}
 				else{
 					//printf("insertion a gauche\n");
 					class_insert_gauche(Y, Ya);
 					Y->insert = 1;
-				}*/
-			//}
+				}
+			}
 			Y->split = 1;
 			
 		}
@@ -393,34 +393,53 @@ void clean_decomposition(spasm *M, spasm *A, int ind_v){
 	printf("%d\n",del);
 }*/
 
+spasm *create_matrix(struct node_t *nodes, spasm *A, int n){
+	int *Ap = A->p;
+	int *Aj = A->j;
+	int p_borne = 0;
+	
 
-struct modular_partition_t *modular_partition(spasm * A)
-{
-	struct class_t *class_head;
-	struct node_t *nodes;
+	spasm *result = spasm_malloc(sizeof(*result));
+	int *p = spasm_calloc(n+1,sizeof(*p));
+	int *j = spasm_calloc(n*n,sizeof(*j));
+
+	p[p_borne++] = 0;
+	int nz = 0;
+	for(int i=0;i<n;i++){
+		struct node_t *node = &nodes[i];
+		struct class_t *class_node = node->class;
+		int n_p = 0;
+		printf("x: %d class : %d\n",node->vertex,node->class->begin_index);
+		for(int it = Ap[node->vertex]; it < Ap[node->vertex + 1];it++){
+
+			struct node_t *neigh = &nodes[Aj[it]];
+			printf("v: %d class : %d\n",neigh->vertex,neigh->class->begin_index);
+			if(neigh->class->begin_index == node->class->begin_index){
+				j[nz++] = neigh->vertex;
+				n_p++;
+			}
+		}
+		p[p_borne + 1] = p[p_borne] + n_p;
+		p_borne++;
+	}
+
+	result->prime = A->prime;
+	result->p = p;
+	result->j = j;
+	result->n = n;
+	result->m = n;
+	result->nzmax = nz;
+	
+	return result;
+}
+
+struct class_t *class_decomposition(struct class_t *initial_class, struct node_t *nodes, spasm * A){
 	int *Ap = A->p;
 	int *Aj = A->j;
 	int n = A->n;
-
-	class_head = class_new();
-	class_head->next = class_head;
-	class_head->prev = class_head;
-	class_head->begin_index = 0;
-	// class_head->size = -1;
-	struct class_t *initial_class = class_new();
-	class_insert(class_head, initial_class);
-
-	nodes = spasm_malloc(n * sizeof(*nodes));
-	for (int i = 0; i < n; i++) {
-		nodes[i].vertex = i;
-		node_insert(&nodes[i], initial_class);
-	}
-
 	int *queue = spasm_malloc(n * sizeof(int));
 	int *mark = spasm_calloc(n, sizeof(int));
 	int lo = 0, hi = 0;
-	//print_partition(class_head);
-	//print_partition_index(class_head);
 
 
 	struct node_t *pivot = &nodes[0];
@@ -440,6 +459,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 	class_insert(initial_class, class);
 	transfer(initial_class, class, pivot);
 
+
+	/* Partie de code du départ (ne fait aucune separation dans le cas d'un matrice 	   sans arretes */
 
 	/*for (int i = 0; i < n; i++) {
 
@@ -482,8 +503,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 	ctx.L_sp = 0;
 	ctx.K_lo = 0;
 	ctx.K_hi = 0;
-	struct class_t *Z = class_head->next;
-	for (struct class_t * X = Z; X != class_head; X = X->next)
+	struct class_t *Z = initial_class->next;
+	for (struct class_t * X = Z; X != initial_class; X = X->next)
 		if (X->size > Z->size) {
 			ctx.L[ctx.L_sp++] = Z;
 			Z = X;
@@ -494,8 +515,6 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 	int ind_pivot = pivot->class->begin_index;
 	while (ctx.L_sp > 0 || ctx.K_lo < ctx.K_hi) {
-		//print_partition(class_head);
-		//print_partition_index(class_head);
 		if (ctx.L_sp == 0) {
 			struct class_t *X = ctx.K[ctx.K_lo++];
 			X->Kpos = -1;
@@ -520,8 +539,107 @@ struct modular_partition_t *modular_partition(spasm * A)
 	free(ctx.L);
 	free(ctx.K);
 
-	//print_partition(class_head);
-	//print_partition_index(class_head);
+	print_partition(initial_class);
+	
+	return initial_class;
+}
+
+
+struct modular_partition_t *modular_partition(spasm * A)
+{
+	struct class_t *class_head;
+	struct node_t *nodes;
+	int *Ap = A->p;
+	int *Aj = A->j;
+	int n = A->n;
+
+
+	class_head = class_new();
+	class_head->next = class_head;
+	class_head->prev = class_head;
+	class_head->begin_index = 0;
+	// class_head->size = -1;
+	struct class_t *initial_class = class_new();
+	class_insert(class_head, initial_class);
+
+	nodes = spasm_malloc(n * sizeof(*nodes));
+	for (int i = 0; i < n; i++) {
+		nodes[i].vertex = i;
+		node_insert(&nodes[i], initial_class);
+	}
+
+	print_partition(initial_class);	
+	initial_class = class_decomposition(initial_class,nodes,A);
+
+	struct class_t *tmp_class_head = class_new();
+	tmp_class_head->next = tmp_class_head;
+	tmp_class_head->prev = tmp_class_head;
+	tmp_class_head->begin_index = 0;
+
+	struct class_t *tmp_class = class_new();
+	class_insert(tmp_class_head, tmp_class);
+	
+	struct node_t *nodes_tmp = spasm_malloc(n * sizeof(*nodes_tmp));
+
+	int p_borne = 0;
+	
+	spasm *B = spasm_malloc(sizeof(*B));
+	int *p = spasm_calloc(n+1,sizeof(*p));
+	int *j = spasm_calloc(n*n,sizeof(*j));
+
+	p[p_borne] = 0;
+	int nz = 0;
+	for (int i = n - initial_class->size; i < n; i++) {
+
+		struct node_t *node = &nodes[i];
+		nodes_tmp[i].vertex = nodes[i].vertex;
+		node_insert(&nodes_tmp[i], tmp_class);
+
+		struct class_t *class_node = node->class;
+		int n_p = 0;
+		for(int it = Ap[node->vertex]; it < Ap[node->vertex + 1];it++){
+
+			struct node_t *neigh = &nodes[Aj[it]];
+			if(neigh->class->begin_index == node->class->begin_index){
+				j[nz++] = neigh->vertex;
+				n_p++;
+			}
+		}
+		p[p_borne + 1] = p[p_borne] + n_p;
+		p_borne++;
+	}
+
+	B->prime = A->prime;
+	B->p = p;
+	B->j = j;
+	B->n = initial_class->size;
+	B->m = initial_class->size;
+	B->nzmax = nz;
+
+	printf("Bn : %d\n",B->n);
+	printf("bnz : %d\n", B->nzmax);
+	
+	int *Bp = B->p;
+	for(int i = 0; i<=B->n;i++){
+		printf("%d  ",Bp[i]);
+	}
+	printf("\n");
+
+	int *Bj = B->j;
+	for(int i = 0; i<B->nzmax;i++){
+		printf("%d  ",Bj[i]);
+	}
+	printf("\n");
+
+	struct node_t *node = &nodes_tmp[0];
+	//printf("%d\n",node->vertex);
+	//printf("%d\n",node->next->vertex);
+
+	//tmp_class = class_decomposition(tmp_class,nodes_tmp,B);
+	//print_partition(class_head);	
+	print_class(tmp_class);
+
+
 	int m = 0;
 	int *module = spasm_malloc(sizeof(int) * n);
 	// debugging purposes

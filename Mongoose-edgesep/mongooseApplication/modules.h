@@ -6,6 +6,7 @@ struct modular_partition_t {
 
 struct node_t;
 struct class_t;
+struct tree_node_t;
 
 struct node_t {
 	struct node_t *prev, *next;
@@ -24,7 +25,7 @@ struct class_t {
 
 	int Lpos;
 	int Kpos;
-
+	int check;
 };
 
 struct module_ctx_t {
@@ -36,4 +37,17 @@ struct module_ctx_t {
 
 };
 
+struct tree_node_t {
+	int n_class;
+	int n_vertex;
+	struct class_t **classes;
+	int *old_vertex;
+	struct tree_node_t *father;
+	struct tree_node_t *childs;
+	spasm *matrix;
+};
+
 struct modular_partition_t *modular_partition(spasm * A);
+
+struct tree_node_t *make_root(struct class_t *initial_class);
+struct tree_node_t **make_childs(struct tree_node_t *root);

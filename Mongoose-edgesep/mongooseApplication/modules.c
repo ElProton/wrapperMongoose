@@ -31,6 +31,22 @@ void class_destroy(struct class_t *C)
 	free(C);
 }
 
+void print_tree_node_info(struct tree_node_t *node){
+	if(node->father == NULL){
+		printf("{root  ");
+	}else{
+		printf("{node  ");
+	}
+
+	printf(" n_c : %d, n_d : %d  ",node->n_class,node->n_vertex);
+	printf("old_vertex : [");
+	int *old_vertex = node->old_vertex;
+	for(int i=0; i<node->n_vertex;i++){
+		printf("%d, ",old_vertex[i]);
+	}
+	printf("]\n");
+}
+
 void print_class(struct class_t *X)
 {
 	for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next)
@@ -257,147 +273,72 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 
 }
 
-/*int fraction(int *potentiel,spasm *M, spasm *A, int n, int i, int j){
-	printf("pot %d : %d  pot %d : %d\n",i,potentiel[i],j,potentiel[j]);
-	int *Ap = A->p;
-	int *Aj = A->j;
-	int *Mj = M->j;
-	int i_index = Mj[potentiel[i]]; //L'indice dans Ap du sommet à l'indice i dans Mp
-	int j_index = Mj[potentiel[j]];
+struct tree_node_t *make_root(struct class_t *initial_class){
+	struct tree_node_t *root = malloc(sizeof(*root));
 
-	for(int a = 0; a < i; a++){
-		int a_index = Mj[potentiel[a]];//le no de sommet dans A
+	int n_class = 0;
+	int n_vertex = 0;
+	
+	for(struct class_t *class = initial_class; class->check != 1; class = class->next){
+		n_class++;
+		class->check = 1;
+		n_vertex = n_vertex + class->size;
+	}
+	root->n_class = n_class;
 
-		if(a_index != -1){
-			int a_ind = Ap[a_index];
-			int edge_i = 0;
-			int edge_j = 0;
-			for(int p = 0; p < Ap[a_index +1] - a_ind; p++) {
-				if(Aj[a_ind+p] == i_index){
-					edge_i++;
-				}
-				if(Aj[a_ind+p] == j_index){
-					edge_j++;
-				}
-			}
-			if(edge_i != edge_j){
-				printf("casseur %d entre %d et %d\n",a_index,i,j);
-				goto casseur;
-			}
-		}
+	int *old_vertex = calloc(n_vertex, sizeof(*old_vertex));
+	struct class_t **classes = calloc(n_class, sizeof(**classes));
+
+	int ind_class = 0;
+
+	for(struct class_t *class = initial_class; class->check != 0; class = class->next){
+		classes[ind_class++] = class;
+		class->check = 0;
 	}
 
-	for(int a = j+1; a < n; a++){
-		int a_index = Mj[potentiel[a]];//le no de sommet dans A
+	for(int i=0; i < n_vertex; i++)
+		old_vertex[i] = -1;
 
-		if(a_index != -1){
-			int a_ind = Ap[a_index];
-			int edge_i = 0;
-			int edge_j = 0;
-			for(int p = 0; p < Ap[a_index +1] - a_ind; p++) {
-				if(Aj[a_ind+p] == i_index){
-					edge_i++;
-				}
-				if(Aj[a_ind+p] == j_index){
-					edge_j++;
-				}
-			}
-			if(edge_i != edge_j){
-				printf("casseur %d entre %d et %d\n",a_index,i,j);
-				goto casseur;
-			}
-		}
-	}
+	root->old_vertex = old_vertex;
+	root->n_vertex = n_vertex;
+	root->father = NULL;
 
-	return 0;
-
-casseur:
-	return 1;
+	return root;
 }
 
-void clean_decomposition(spasm *M, spasm *A, int ind_v){
-	int n = M->n;
-	int *Mp = M->p;
-	int *Mj = M->j;
-	int *potentiel = spasm_calloc(n,sizeof(int));
+struct tree_node_t **make_childs(struct tree_node_t *father){
+	int ind_child = 0;
+	struct tree_node_t **childs = calloc(father->n_class,sizeof(**childs));
 
-	int del = 0;
-	for(int i=0; i<n; i++){
-		potentiel[i] = Mp[i+1];
-		printf("pot%d : %d\n",i,Mp[i+1]);
+	struct class_t **classes = father->classes;
+	
+	for(int i=0; i < father->n_class; i++){
+		struct class_t *actual_class = classes[i];
+		struct tree_node_t *child = malloc(sizeof(*child));
+		child->father = father;
+		
+		int *old_vertex = calloc(actual_class->size, sizeof(*old_vertex));
+		int ind_old_vertex = 0;
+
+		struct node_t *first = actual_class->nodes;
+		old_vertex[ind_old_vertex++] = first->vertex;
+
+		for(struct node_t *x = first->next; x->vertex != first->vertex; x = x->next){
+			old_vertex[ind_old_vertex++] = x->vertex;
+		}
+		
+		child->old_vertex = old_vertex;
+		child->n_vertex = actual_class->size;
+		//childs[ind_child++] = child;
 	}
 
-	int b_d = 0;
-	int b_g = ind_v;
-	printf("g : %d d : %d\n",b_g,b_d);
-	for(int i=b_g; i < n-1; i++){
-		printf("g : %d d : %d\n",i,b_d);
-		for(int j=b_d; j < i; j++){
-			if(j <= ind_v){
-				printf("i: %d et j : %d n : %d\n",i,j,n);
-				if(!fraction(potentiel,M,A,n,n-i-1,n-j-1)){
+	return childs;
+}
 
-					for(int k = i-1; k>=j; k--){
-						printf("k: %d \n",k);
-						potentiel[n - k] = -1;
-						del++;
-					}
-					b_g = i;
-					if(j == b_d){
-						b_d = i;
-						potentiel[n - b_d] = -1;
-						del++;
-					}
-			
-					break;
-				}
-			}
-		}
-	}
-
-
-	b_g = n - 1;
-	for(int j=b_d + 1; j < b_g; j++){
-			printf("i: %d et j : %d\n",b_g,j);
-			if(!fraction(potentiel,M,A,n,n-b_g-1,n-j-1)){
-
-				for(int k = b_g-1; k>=j; k--){
-					printf("k: %d \n",k);
-					potentiel[n - k] = -1;
-					del++;
-				}
-				if(j == b_d){
-					potentiel[n - b_d] = -1;
-					del++;
-				}
-			
-				break;
-			}
-		}
-
-
-
-
-	int *Mptest = calloc(M->n,sizeof(int));
-	Mptest[0] = 0;
-	int z = 1;
-	for(int i=0;i<M->n;i++){
-		if(potentiel[i] != -1){
-			Mptest[z] = potentiel[i];
-			z++;
-		}
-	}
-
-	M->p = Mptest;
-	M->n = n - del;
-	printf("%d\n",del);
-}*/
-
-spasm *create_matrix(struct node_t *nodes, spasm *A, int n){
+spasm *create_matrix(struct node_t *nodes, int *new_vertex, int *old_vertex, spasm *A, int n){
 	int *Ap = A->p;
 	int *Aj = A->j;
 	int p_borne = 0;
-	
 
 	spasm *result = spasm_malloc(sizeof(*result));
 	int *p = spasm_calloc(n+1,sizeof(*p));
@@ -409,8 +350,8 @@ spasm *create_matrix(struct node_t *nodes, spasm *A, int n){
 		struct node_t *node = &nodes[i];
 		struct class_t *class_node = node->class;
 		int n_p = 0;
-		printf("x: %d class : %d\n",node->vertex,node->class->begin_index);
-		for(int it = Ap[node->vertex]; it < Ap[node->vertex + 1];it++){
+		printf("x: %d class : %d\n",old_vertex[i],class_node->begin_index);
+		for(int it = Ap[old_vertex[i]]; it < Ap[old_vertex[i] + 1];it++){
 
 			struct node_t *neigh = &nodes[Aj[it]];
 			printf("v: %d class : %d\n",neigh->vertex,neigh->class->begin_index);
@@ -568,10 +509,21 @@ struct modular_partition_t *modular_partition(spasm * A)
 		node_insert(&nodes[i], initial_class);
 	}
 
-	print_partition(initial_class);	
+	print_partition(class_head);	
 	initial_class = class_decomposition(initial_class,nodes,A);
 
-	struct class_t *tmp_class_head = class_new();
+	struct tree_node_t *root = make_root(initial_class);
+	root->matrix = A;
+
+	struct tree_node_t **childs = make_childs(root);
+
+	struct class_t **child_classes = root->classes;
+	struct class_t *effective_class = child_classes[0];
+	//print_class(effective_class);
+
+	//Insertion des noeud dans la nouvelle classe et création de la matrice correspondante
+
+	/*struct class_t *tmp_class_head = class_new();
 	tmp_class_head->next = tmp_class_head;
 	tmp_class_head->prev = tmp_class_head;
 	tmp_class_head->begin_index = 0;
@@ -581,15 +533,15 @@ struct modular_partition_t *modular_partition(spasm * A)
 	
 	struct node_t *nodes_tmp = spasm_malloc(n * sizeof(*nodes_tmp));
 
-	int p_borne = 0;
-	
 	spasm *B = spasm_malloc(sizeof(*B));
 	int *p = spasm_calloc(n+1,sizeof(*p));
 	int *j = spasm_calloc(n*n,sizeof(*j));
 
-	p[p_borne] = 0;
 	int nz = 0;
-	for (int i = n - initial_class->size; i < n; i++) {
+	int p_borne = 0;
+	p[p_borne] = 0;
+
+	for (int i = n - effective_class->size; i < n; i++) {
 
 		struct node_t *node = &nodes[i];
 		nodes_tmp[i].vertex = nodes[i].vertex;
@@ -612,8 +564,8 @@ struct modular_partition_t *modular_partition(spasm * A)
 	B->prime = A->prime;
 	B->p = p;
 	B->j = j;
-	B->n = initial_class->size;
-	B->m = initial_class->size;
+	B->n = effective_class->size;
+	B->m = effective_class->size;
 	B->nzmax = nz;
 
 	printf("Bn : %d\n",B->n);
@@ -631,13 +583,13 @@ struct modular_partition_t *modular_partition(spasm * A)
 	}
 	printf("\n");
 
-	struct node_t *node = &nodes_tmp[0];
+	struct node_t *node = &nodes_tmp[0];*/
 	//printf("%d\n",node->vertex);
 	//printf("%d\n",node->next->vertex);
 
-	//tmp_class = class_decomposition(tmp_class,nodes_tmp,B);
+	//tmp_class = class_decomposition(tmp_class,tmp_class->nodes,B);
 	//print_partition(class_head);	
-	print_class(tmp_class);
+	//print_class(tmp_class);
 
 
 	int m = 0;

@@ -7,10 +7,13 @@ struct modular_partition_t {
 struct node_t;
 struct class_t;
 struct tree_node_t;
+struct permutation_factorisante_t;
+struct permutation_item_t;
 
 struct node_t {
 	struct node_t *prev, *next;
 	int vertex;
+	int real_vertex_value;
 	struct class_t *class;
 };
 
@@ -47,7 +50,23 @@ struct tree_node_t {
 	spasm *matrix;
 };
 
+struct permutation_factorisante_t {
+	struct permutation_item_t **items;
+	int n;
+	int index;
+};
+
+struct permutation_item_t {
+	int vertex;
+	int left_parentheses;
+	int right_parentheses;
+};
+
+void print_permutation(struct permutation_factorisante_t *permutation);
 struct modular_partition_t *modular_partition(spasm * A);
+struct permutation_factorisante_t *make_permutation(struct class_t *class_x);
+void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisante_t *permutation);
+struct permutation_factorisante_t *search_fractures(struct permutation_factorisante_t *permutation, spasm *A);
 
 struct tree_node_t *make_root(struct class_t *initial_class);
 struct tree_node_t **make_childs(struct tree_node_t *root);

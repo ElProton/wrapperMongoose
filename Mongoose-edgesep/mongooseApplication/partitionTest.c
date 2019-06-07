@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 	int64_t *ap64;
 	if (mode=='B') {
-		struct component_partition_t *quotient = component_partition(A);
+/*		struct component_partition_t *quotient = component_partition(A);
 
 		A = quotient -> A;
 		g->w = quotient -> w;
@@ -183,7 +183,92 @@ int main(int argc, char **argv)
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);
-	printf("imbalance: %f \n",  ec->imbalance);
+	printf("imbalance: %f \n",  ec->imbalance);*/
+
+
+	struct permutation_factorisante_t *perm = malloc(sizeof(*perm));
+	perm->n = 11;
+	struct permutation_item_t **items = calloc(11,sizeof(*items));
+	struct permutation_item_t *item1 = malloc(sizeof(*item1));
+	struct permutation_item_t *item2 = malloc(sizeof(*item1));
+	struct permutation_item_t *item3 = malloc(sizeof(*item1));
+	struct permutation_item_t *item4 = malloc(sizeof(*item1));
+	struct permutation_item_t *item5 = malloc(sizeof(*item1));
+	struct permutation_item_t *item6 = malloc(sizeof(*item1));
+	struct permutation_item_t *item7 = malloc(sizeof(*item1));
+	struct permutation_item_t *item8 = malloc(sizeof(*item1));
+	struct permutation_item_t *item9 = malloc(sizeof(*item1));
+	struct permutation_item_t *item10 = malloc(sizeof(*item1));
+	struct permutation_item_t *item11 = malloc(sizeof(*item1));
+
+	item1->vertex = 0;
+	item2->vertex = 1;
+	item3->vertex = 2;
+	item4->vertex = 3;
+	item5->vertex = 4;
+	item6->vertex = 5;
+	item7->vertex = 6;
+	item8->vertex = 7;
+	item9->vertex = 8;
+	item10->vertex = 9;
+	item11->vertex = 10;
+
+			item1->left_parentheses = 0;
+			item1->right_parentheses = 0;
+			item2->left_parentheses = 0;
+			item2->right_parentheses = 0;
+			item3->left_parentheses = 0;
+			item3->right_parentheses = 0;
+			item4->left_parentheses = 0;
+			item4->right_parentheses = 0;
+			item5->left_parentheses = 0;
+			item5->right_parentheses = 0;
+			item6->left_parentheses = 0;
+			item6->right_parentheses = 0;
+			item7->left_parentheses = 0;
+			item7->right_parentheses = 0;
+			item8->left_parentheses = 0;
+			item8->right_parentheses = 0;
+			item9->left_parentheses = 0;
+			item9->right_parentheses = 0;
+			item10->left_parentheses = 0;
+			item10->right_parentheses = 0;
+			item11->left_parentheses = 0;
+			item11->right_parentheses = 0;
+
+
+	items[0] = item11;
+	items[1] = item10;
+	items[2] = item9;
+	items[3] = item8;
+	items[4] = item7;
+	items[5] = item6;
+	items[6] = item5;
+	items[7] = item1;
+	items[8] = item2;
+	items[9] = item3;
+	items[10] = item4;
+
+	perm->items = items;
+
+	perm = search_fractures(perm, A);
+	print_permutation(perm);
+
+	free(item1);
+	free(item2);
+	free(item3);
+	free(item4);
+	free(item5);
+	free(item6);
+	free(item7);
+	free(item8);
+	free(item9);
+	free(item10);
+	free(item11);
+	free(items);
+	free(perm);
+
+}
 
 	return EXIT_SUCCESS;
 }

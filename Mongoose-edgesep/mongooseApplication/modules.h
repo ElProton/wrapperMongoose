@@ -64,8 +64,8 @@ struct permutation_item_t {
 
 void print_permutation(struct permutation_factorisante_t *permutation);
 struct modular_partition_t *modular_partition(spasm * A);
-struct permutation_factorisante_t *make_permutation(struct class_t *class_x);
-void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisante_t *permutation);
+struct permutation_factorisante_t *make_permutation(struct class_t *class_x, struct node_t *nodes, spasm *A);
+void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisante_t *permutation, struct node_t *nodes, spasm *A);
 struct permutation_factorisante_t *search_fractures(struct permutation_factorisante_t *permutation, spasm *A);
 
 struct tree_node_t *make_root(struct class_t *initial_class);

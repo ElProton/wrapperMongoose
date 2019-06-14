@@ -173,7 +173,6 @@ void refine(struct module_ctx_t *ctx, struct node_t *x, int ind_pivot)
 		struct node_t *y = &nodes[Aj[it]];
 		y->class->marks++;
 	}
-
 	for (int it = Nx_start; it < Nx_end; it++) {
 		struct node_t *y = nodes + Aj[it];
 		struct class_t *Y = y->class;
@@ -315,65 +314,6 @@ spasm *create_matrix(struct node_t *nodes, int *new_vertex, int *old_vertex, spa
 	return result;
 }
 
-/*struct permutation_factorisante_t *make_permutation(struct class_t *class_x, struct node_t *nodes, spasm *A){
-	struct permutation_factorisante_t *permutation = malloc(sizeof(*permutation));
-	permutation->n = class_x->size;
-	permutation->index = 0;
-	struct permutation_item_t **items = calloc(permutation->n,sizeof(**items));
-	permutation->items = items;
-	
-	struct class_t *initial_class = class_x->next;
-
-	initial_class = class_decomposition(initial_class,nodes,A);
-
-	for (struct class_t * X = class_x->next; X!= class_x; X = X->next) {
-		if(X->size == 1){
-			struct permutation_item_t *item = malloc(sizeof(*item));
-			struct node_t *node = X->nodes->next;
-
-			item->vertex = node->vertex;
-			item->left_parentheses = 0;
-			item->right_parentheses = 0;
-			items[permutation->index] = item;
-			permutation->index++;
-			
-		}
-		else{
-
-			//Ajouter ici la création de classe de matrice et des noeuds temporaire quand elle sera fonctionnel
-
-			make_permutation_rec(X_tmp,tmp_nodes,B,permutation);
-		}
-	}
-	
-	return permutation;
-}
-
-void *make_permutation_rec(struct class_t *class_x, struct node_t *nodes, spasm *A, struct permutation_factorisante_t *permutation){
-	struct class_t *initial_class = class_x;
-
-	initial_class = class_decomposition(initial_class,nodes,A);
-
-	for (struct class_t * X = class_x->next; X!= class_x; X = X->next) {
-		if(X->size == 1){
-			struct permutation_item_t *item = malloc(sizeof(*item));
-			struct node_t *node = X->nodes->next;
-
-			item->vertex = node->vertex;
-			item->left_parentheses = 0;
-			item->right_parentheses = 0;
-			items[permutation->index] = item;
-			permutation->index++;
-			
-		}
-		else{
-			//Ajouter ici la création de classe de matrice et des noeuds temporaire quand elle sera fonctionnel
-			
-			make_permutation_rec(X_tmp,tmp_nodes,B,permutation);
-		}
-	}
-}*/
-
 struct permutation_factorisante_t *search_fractures(struct permutation_factorisante_t *permutation, spasm *A){
 	int *index_vertex = calloc(permutation->n,sizeof(*index_vertex));
 	struct permutation_item_t **items = permutation->items;
@@ -407,7 +347,7 @@ struct permutation_factorisante_t *search_fractures(struct permutation_factorisa
 			int neigh = Aj[ind_a_ap + x];
 			if(neigh != b->vertex){
 				printf("%d, ",neigh);
-				fractures[neigh]++;
+				fractures[index_vertex[neigh]]++;
 			}
 		}
 		printf("\n");
@@ -416,7 +356,7 @@ struct permutation_factorisante_t *search_fractures(struct permutation_factorisa
 			int neigh = Aj[ind_b_ap + x];
 			if(neigh != a->vertex){
 				printf("%d, ",neigh);
-				fractures[neigh]--;
+				fractures[index_vertex[neigh]]--;
 			}
 		}
 		printf("\n");
@@ -425,8 +365,8 @@ struct permutation_factorisante_t *search_fractures(struct permutation_factorisa
 		while(flag_frac_g == 0 && x < i){
 			if(fractures[x] != 0){
 				a->right_parentheses++;
-				int ind_item = index_vertex[x];
-				struct permutation_item_t *item = items[ind_item];
+				//int ind_item = index_vertex[x];
+				struct permutation_item_t *item = items[x];
 				item->left_parentheses++;
 				flag_frac_g++;
 			}
@@ -440,16 +380,16 @@ struct permutation_factorisante_t *search_fractures(struct permutation_factorisa
 		}
 		if(more_right != -1){
 			b->left_parentheses++;
-			int ind_item = index_vertex[x];
-			struct permutation_item_t *item = items[ind_item];
+			//int ind_item = index_vertex[x];
+			struct permutation_item_t *item = items[more_right];
 			item->right_parentheses++;
 		}
 
-printf("[");
-for(int x=0; x < A->n; x++)
-	printf("%d, ",fractures[x]);
-printf("]\n");
-print_permutation(permutation);
+	printf("[");
+	for(int x=0; x < A->n; x++)
+		printf("%d, ",fractures[x]);
+	printf("]\n");
+	print_permutation(permutation);
 	}
 	free(fractures);
 	free(index_vertex);
@@ -515,12 +455,10 @@ struct class_t *class_decomposition(struct class_t *initial_class, struct node_t
 	free(queue);
 	free(mark);
 
-	if (initial_class->size == 0) {
+	/*if (initial_class->size == 0) {
 		class_remove(initial_class);
 		class_destroy(initial_class);
-	}
-
-	print_partition(initial_class);
+	}*/
 
 	struct module_ctx_t ctx;
 	ctx.A = A;
@@ -565,10 +503,193 @@ struct class_t *class_decomposition(struct class_t *initial_class, struct node_t
 	}
 	free(ctx.L);
 	free(ctx.K);
-
-	print_partition(initial_class);
 	
 	return initial_class;
+}
+
+struct permutation_factorisante_t *make_permutation(struct class_t *class_x, struct node_t *nodes, spasm *A){
+	struct permutation_factorisante_t *permutation = malloc(sizeof(*permutation));
+	permutation->n = class_x->size;
+	permutation->index = 0;
+	struct permutation_item_t **items = calloc(permutation->n,sizeof(**items));
+	permutation->items = items;
+	int n = A->n;
+	int *Ap = A->p;
+	int *Aj = A->j;
+	
+	struct class_t *initial_class = class_x;
+
+	initial_class = class_decomposition(initial_class,nodes,A);
+
+	for (struct class_t * X = initial_class->next; X!= initial_class; X = X->next) {
+		if(X->size > 0){
+			if(X->size == 1){
+				struct permutation_item_t *item = malloc(sizeof(*item));
+				struct node_t *node = X->nodes->next;
+
+				item->vertex = node->vertex;
+				item->left_parentheses = 0;
+				item->right_parentheses = 0;
+				items[permutation->index] = item;
+				permutation->index++;
+			
+			}
+			else{
+
+				struct class_t *tmp_class_head = class_new();
+				tmp_class_head->next = tmp_class_head;
+				tmp_class_head->prev = tmp_class_head;
+				tmp_class_head->begin_index = 0;
+
+				struct class_t *tmp_class = class_new();
+				class_insert(tmp_class_head, tmp_class);
+	
+				struct node_t *nodes_tmp = spasm_malloc(X->size * sizeof(*nodes_tmp));
+
+				spasm *B = spasm_malloc(sizeof(*B));
+				int *p = spasm_calloc(X->size + 1, sizeof(*p));
+				int *j = spasm_calloc(n*n,sizeof(*j));
+
+				int nz = 0;
+				int p_borne = 0;
+				p[p_borne] = 0;
+				int *new_vertex = calloc(n, sizeof(*new_vertex));
+
+				for (int i = 0; i < n; i++){
+					new_vertex[i] = -1;
+				}
+
+				int ind_new_node = 0;
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+					nodes_tmp[ind_new_node].vertex = ind_new_node;
+					nodes_tmp[ind_new_node].real_vertex_value = x->vertex;
+					node_insert(&nodes_tmp[ind_new_node], tmp_class);
+					ind_new_node++;
+				}
+
+				int ind_new_vertex = 0;
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+					new_vertex[x->vertex] = nodes_tmp[ind_new_vertex++].vertex;
+				}
+
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+
+					struct class_t *class_node = x->class;
+					int n_p = 0;
+					for(int it = Ap[x->vertex]; it < Ap[x->vertex + 1];it++){
+
+						struct node_t *neigh = &nodes[Aj[it]];
+						if(neigh->class->begin_index == x->class->begin_index){
+							j[nz++] = new_vertex[neigh->vertex];
+							n_p++;
+						}
+					}
+					p[p_borne + 1] = p[p_borne] + n_p;
+					p_borne++;
+				}
+
+				B->prime = A->prime;
+				B->p = p;
+				B->j = j;
+				B->n = X->size;
+				B->m = X->size;
+				B->nzmax = nz;
+
+				make_permutation_rec(tmp_class,permutation,nodes_tmp,B);
+			}
+		}
+	}
+	
+	return permutation;
+}
+
+void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisante_t *permutation, struct node_t *nodes, spasm *A){
+	struct class_t *initial_class = class_x;
+	struct permutation_item_t **items = permutation->items;
+	int n = A->n;
+	int *Ap = A->p;
+	int *Aj = A->j;
+
+	initial_class = class_decomposition(initial_class,nodes,A);
+
+	for (struct class_t * X = initial_class->next; X!= initial_class; X = X->next) {
+		if(X->size > 0){
+			if(X->size == 1){
+				struct permutation_item_t *item = malloc(sizeof(*item));
+				struct node_t *node = X->nodes->next;
+
+				item->vertex = node->vertex;
+				item->left_parentheses = 0;
+				item->right_parentheses = 0;
+				items[permutation->index] = item;
+				permutation->index++;
+			
+			}
+			else{
+				struct class_t *tmp_class_head = class_new();
+				tmp_class_head->next = tmp_class_head;
+				tmp_class_head->prev = tmp_class_head;
+				tmp_class_head->begin_index = 0;
+
+				struct class_t *tmp_class = class_new();
+				class_insert(tmp_class_head, tmp_class);
+	
+				struct node_t *nodes_tmp = spasm_malloc(X->size * sizeof(*nodes_tmp));
+
+				spasm *B = spasm_malloc(sizeof(*B));
+				int *p = spasm_calloc(X->size + 1, sizeof(*p));
+				int *j = spasm_calloc(n*n,sizeof(*j));
+
+				int nz = 0;
+				int p_borne = 0;
+				p[p_borne] = 0;
+				int *new_vertex = calloc(n, sizeof(*new_vertex));
+
+				for (int i = 0; i < n; i++){
+					new_vertex[i] = -1;
+				}
+
+				int ind_new_node = 0;
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+					nodes_tmp[ind_new_node].vertex = ind_new_node;
+					nodes_tmp[ind_new_node].real_vertex_value = x->vertex;
+					node_insert(&nodes_tmp[ind_new_node], tmp_class);
+					ind_new_node++;
+				}
+
+				int ind_new_vertex = 0;
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+					new_vertex[x->vertex] = nodes_tmp[ind_new_vertex++].vertex;
+				}
+
+				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
+
+					struct class_t *class_node = x->class;
+					int n_p = 0;
+					for(int it = Ap[x->vertex]; it < Ap[x->vertex + 1];it++){
+
+						struct node_t *neigh = &nodes[Aj[it]];
+						if(neigh->class->begin_index == x->class->begin_index){
+							j[nz++] = new_vertex[neigh->vertex];
+							n_p++;
+						}
+					}
+					p[p_borne + 1] = p[p_borne] + n_p;
+					p_borne++;
+				}
+
+				B->prime = A->prime;
+				B->p = p;
+				B->j = j;
+				B->n = X->size;
+				B->m = X->size;
+				B->nzmax = nz;
+
+			
+				make_permutation_rec(tmp_class,permutation,nodes_tmp,B);
+			}
+		}
+	}
 }
 
 
@@ -595,13 +716,16 @@ struct modular_partition_t *modular_partition(spasm * A)
 		node_insert(&nodes[i], initial_class);
 	}	
 
-	print_partition(class_head);	
-	initial_class = class_decomposition(initial_class,nodes,A);
+	print_partition(class_head);
+
+	struct permutation_factorisante_t *permutation = make_permutation(initial_class,nodes,A);
+
+	//initial_class = class_decomposition(initial_class,nodes,A);
 	struct class_t * X_rec = class_head->next;
 		
 			//Insertion des noeud dans la nouvelle classe et création de la matrice correspondante
 
-			struct class_t *tmp_class_head = class_new();
+			/*struct class_t *tmp_class_head = class_new();
 			tmp_class_head->next = tmp_class_head;
 			tmp_class_head->prev = tmp_class_head;
 			tmp_class_head->begin_index = 0;
@@ -689,7 +813,13 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 			for (int i = 0; i < n; i++)
 				printf("%d ",new_vertex[i]);
-			tmp_class = class_decomposition(tmp_class,tmp_class->nodes,B);
+			printf("\n");
+
+			//printf("%d\n",nodes_tmp->next->next->next->next->next->vertex);
+
+			struct node_t *test = nodes_tmp->next;
+
+			tmp_class = class_decomposition(tmp_class,nodes_tmp,B);*/
 			//print_partition(class_head);
 
 

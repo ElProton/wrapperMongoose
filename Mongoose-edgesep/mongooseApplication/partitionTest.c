@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 	int64_t *ap64;
 	if (mode=='B') {
-/*		struct component_partition_t *quotient = component_partition(A);
+		struct component_partition_t *quotient = component_partition(A);
 
 		A = quotient -> A;
 		g->w = quotient -> w;
@@ -183,10 +183,10 @@ int main(int argc, char **argv)
 
 	printf("cut cost: %f \n",  ec->cut_cost);
 	printf("cut size: %li \n",  ec->cut_size);
-	printf("imbalance: %f \n",  ec->imbalance);*/
+	printf("imbalance: %f \n",  ec->imbalance);
 
 
-	struct permutation_factorisante_t *perm = malloc(sizeof(*perm));
+	/*struct permutation_factorisante_t *perm = malloc(sizeof(*perm));
 	perm->n = 11;
 	struct permutation_item_t **items = calloc(11,sizeof(*items));
 	struct permutation_item_t *item1 = malloc(sizeof(*item1));
@@ -266,9 +266,8 @@ int main(int argc, char **argv)
 	free(item10);
 	free(item11);
 	free(items);
-	free(perm);
+	free(perm);*/
 
-}
 
 	return EXIT_SUCCESS;
 }

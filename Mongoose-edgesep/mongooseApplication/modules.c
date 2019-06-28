@@ -55,6 +55,11 @@ void print_class(struct class_t *X)
 	for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next)
 		printf("%d ", x->vertex + 1);
 }
+void print_real_class(struct class_t *X)
+{
+	for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next)
+		printf("%d ", x->real_vertex_value + 1);
+}
 
 void print_class_index(struct class_t *X)
 {
@@ -518,21 +523,21 @@ struct permutation_factorisante_t *make_permutation(struct class_t *class_x, str
 	int *Aj = A->j;
 	
 	struct class_t *initial_class = class_x;
+	print_real_class(class_x);
 
 	initial_class = class_decomposition(initial_class,nodes,A);
 
-	for (struct class_t * X = initial_class->next; X!= initial_class; X = X->next) {
+	for (struct class_t * X = initial_class; X!= initial_class->prev; X = X->next) {
 		if(X->size > 0){
 			if(X->size == 1){
 				struct permutation_item_t *item = malloc(sizeof(*item));
 				struct node_t *node = X->nodes->next;
 
-				item->vertex = node->vertex;
+				item->vertex = node->real_vertex_value;
 				item->left_parentheses = 0;
 				item->right_parentheses = 0;
 				items[permutation->index] = item;
-				permutation->index++;
-			
+				permutation->index++;		
 			}
 			else{
 
@@ -605,6 +610,7 @@ struct permutation_factorisante_t *make_permutation(struct class_t *class_x, str
 
 void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisante_t *permutation, struct node_t *nodes, spasm *A){
 	struct class_t *initial_class = class_x;
+	print_real_class(class_x);
 	struct permutation_item_t **items = permutation->items;
 	int n = A->n;
 	int *Ap = A->p;
@@ -612,13 +618,13 @@ void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisa
 
 	initial_class = class_decomposition(initial_class,nodes,A);
 
-	for (struct class_t * X = initial_class->next; X!= initial_class; X = X->next) {
+	for (struct class_t * X = initial_class; X!= initial_class->prev; X = X->next) {
 		if(X->size > 0){
 			if(X->size == 1){
 				struct permutation_item_t *item = malloc(sizeof(*item));
 				struct node_t *node = X->nodes->next;
 
-				item->vertex = node->vertex;
+				item->vertex = node->real_vertex_value;
 				item->left_parentheses = 0;
 				item->right_parentheses = 0;
 				items[permutation->index] = item;
@@ -652,7 +658,7 @@ void *make_permutation_rec(struct class_t *class_x, struct permutation_factorisa
 				int ind_new_node = 0;
 				for (struct node_t * x = X->nodes->next; x != X->nodes; x = x->next) {
 					nodes_tmp[ind_new_node].vertex = ind_new_node;
-					nodes_tmp[ind_new_node].real_vertex_value = x->vertex;
+					nodes_tmp[ind_new_node].real_vertex_value = x->real_vertex_value;
 					node_insert(&nodes_tmp[ind_new_node], tmp_class);
 					ind_new_node++;
 				}
@@ -713,6 +719,7 @@ struct modular_partition_t *modular_partition(spasm * A)
 	nodes = spasm_malloc(n * sizeof(*nodes));
 	for (int i = 0; i < n; i++) {
 		nodes[i].vertex = i;
+		nodes[i].real_vertex_value = i;
 		node_insert(&nodes[i], initial_class);
 	}	
 
@@ -720,107 +727,20 @@ struct modular_partition_t *modular_partition(spasm * A)
 
 	struct permutation_factorisante_t *permutation = make_permutation(initial_class,nodes,A);
 
-	//initial_class = class_decomposition(initial_class,nodes,A);
+	struct permutation_item_t **items = permutation->items;
+
+	printf("permutation : ");
+	for(int i = 0; i < permutation->n;i++){
+		struct permutation_item_t *item = items[i];
+		printf("%d, ",item->vertex);
+	}
+	printf("\n");
+
+	permutation = search_fractures(permutation,A);
+
 	struct class_t * X_rec = class_head->next;
 		
 			//Insertion des noeud dans la nouvelle classe et création de la matrice correspondante
-
-			/*struct class_t *tmp_class_head = class_new();
-			tmp_class_head->next = tmp_class_head;
-			tmp_class_head->prev = tmp_class_head;
-			tmp_class_head->begin_index = 0;
-
-			struct class_t *tmp_class = class_new();
-			class_insert(tmp_class_head, tmp_class);
-	
-			struct node_t *nodes_tmp = spasm_malloc(X_rec->size * sizeof(*nodes_tmp));
-
-			spasm *B = spasm_malloc(sizeof(*B));
-			int *p = spasm_calloc(X_rec->size + 1, sizeof(*p));
-			int *j = spasm_calloc(n*n,sizeof(*j));
-
-			int nz = 0;
-			int p_borne = 0;
-			p[p_borne] = 0;
-			int *new_vertex = calloc(n, sizeof(*new_vertex));
-
-			for (int i = 0; i < n; i++){
-				new_vertex[i] = -1;
-			}
-
-			int ind_new_node = 0;
-			for (struct node_t * x = X_rec->nodes->next; x != X_rec->nodes; x = x->next) {
-				nodes_tmp[ind_new_node].vertex = ind_new_node;
-				nodes_tmp[ind_new_node].real_vertex_value = x->vertex;
-				node_insert(&nodes_tmp[ind_new_node], tmp_class);
-				ind_new_node++;
-			}
-
-			int ind_new_vertex = 0;
-			for (struct node_t * x = X_rec->nodes->next; x != X_rec->nodes; x = x->next) {
-				new_vertex[x->vertex] = nodes_tmp[ind_new_vertex++].vertex;
-			}
-
-			for (struct node_t * x = X_rec->nodes->next; x != X_rec->nodes; x = x->next) {
-
-				struct class_t *class_node = x->class;
-				int n_p = 0;
-				for(int it = Ap[x->vertex]; it < Ap[x->vertex + 1];it++){
-
-					struct node_t *neigh = &nodes[Aj[it]];
-					if(neigh->class->begin_index == x->class->begin_index){
-						j[nz++] = new_vertex[neigh->vertex];
-						n_p++;
-					}
-				}
-				p[p_borne + 1] = p[p_borne] + n_p;
-				p_borne++;
-			}
-
-			B->prime = A->prime;
-			B->p = p;
-			B->j = j;
-			B->n = X_rec->size;
-			B->m = X_rec->size;
-			B->nzmax = nz;
-
-			printf("Bn : %d\n",B->n);
-			printf("bnz : %d\n", B->nzmax);
-	
-			int *Bp = B->p;
-			for(int i = 0; i<=B->n;i++){
-				printf("%d  ",Bp[i]);
-			}
-			printf("\n");
-
-			int *Bj = B->j;
-			for(int i = 0; i<B->nzmax;i++){
-				printf("%d  ",Bj[i]);
-			}
-			printf("\n");
-			print_partition(tmp_class_head);
-
-			for (struct node_t * x = tmp_class->nodes->next; x != tmp_class->nodes; x = x->next){
-				printf("node vertex : %d\n ", x->vertex + 1);
-				printf("real vertex : %d\n",x->real_vertex_value + 1);
-			}
-
-			printf("\n");
-
-			for (struct node_t * x = tmp_class_head->next->nodes->next; x != tmp_class->nodes; x = x->next) {
-				printf("tmp node vertex : %d\n ", x->vertex + 1);
-			}
-
-			for (int i = 0; i < n; i++)
-				printf("%d ",new_vertex[i]);
-			printf("\n");
-
-			//printf("%d\n",nodes_tmp->next->next->next->next->next->vertex);
-
-			struct node_t *test = nodes_tmp->next;
-
-			tmp_class = class_decomposition(tmp_class,nodes_tmp,B);*/
-			//print_partition(class_head);
 
 
 	int m = 0;
